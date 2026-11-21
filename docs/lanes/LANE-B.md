@@ -14,7 +14,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
 - [x] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
 - [x] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
-- [ ] **B9 Tests.** Unit + service tests (PGlite). **Concurrency test on real Postgres** (20 simultaneous bids: one winner per version, purse never negative, no double sale). Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers.
+- [x] **B9 Tests.** Unit + service tests (PGlite). **Concurrency test on real Postgres** (20 simultaneous bids: one winner per version, purse never negative, no double sale). Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers.
 - [ ] **STOP: Lane B.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
 ## Phase 0 pieces to build on
@@ -67,6 +67,16 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   Discord formatter, delivery with `after()` and retries, auto-disable, redeliver, test event),
   5 Route Handlers under `/api/tournaments/[id]/webhooks`, Settings → Integrations page
   `/t/[id]/settings/integrations`. 98 tests.
+- 2026-11-21 · B9 tests. `tests/concurrency/bids.test.ts` on real Postgres 17 (Docker): 20
+  simultaneous bids on one version → exactly 1 accepted and 19 `OUTBID`; a 20-captain bidding storm →
+  strictly rising amounts, alternating teams, one `bid.placed` per version with no gaps; whole-purse
+  bids plus 10 "Sold now" presses and 20 ticks racing → one `lot.closed`, one sale, no negative
+  purse; a raced double-tap `commandId` → one bid; two tournaments bidding in parallel. 5/5 pass.
+  Mutation check: removing `FOR UPDATE` makes the 20-bid test fail (2 winners).
+  E2E `e2e/auction/two-captains.spec.ts`: organiser console + two captain phones bid against each
+  other, outbid toast, organiser sells, everyone sees SOLD. 8/8 consecutive passes on a warm server.
+  Tenant-isolation tests live next to every service (auction commands / bids / snapshot,
+  allocation, live settings, webhooks).
 
 ## Decisions
 
