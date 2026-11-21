@@ -6,7 +6,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 
 ## Checklist
 
-- [ ] **A1 Accounts.** Player sign-up `/register` (optional organiser key, live tournament preview, Captain/Soldier toggle). Organiser sign-up `/register/organiser`. Login / logout. Username availability. Player IDs and organiser keys (`formatKey`). Change password.
+- [x] **A1 Accounts.** Player sign-up `/register` (optional organiser key, live tournament preview, Captain/Soldier toggle). Organiser sign-up `/register/organiser`. Login / logout. Username availability. Player IDs and organiser keys (`formatKey`). Change password.
 - [ ] **A2 Tournaments.** Create (one active per organiser → 409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
 - [ ] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), change role / remove, transfer ownership, Settings → Organisers.
 - [ ] **A4 Path A: personal links.** "Add person" drawer. Token encryption / decryption, `/i/[token]`, regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on captain and soldier rows, CSV import.
@@ -31,6 +31,17 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 ## Progress
 
 _Append dated entries as tasks land._
+
+- 2026-11-21 **A1** — `formatKey` / `normalizeKey` / `generateKey` (+ tests). `services/accounts`:
+  organiser + player sign-up (Player ID for everyone, organiser key for organisers, retry on key
+  collisions), login (per-IP + per-username rate limits, same message for unknown user / wrong
+  password, dummy-hash timing guard), username availability, change password, profile update
+  (refreshes snapshots only in unstarted tournaments), regenerate organiser key. Path-B core
+  (`services/joining/organiserKey.ts`: key preview, `joinWithKey` under a tournament lock) because
+  sign-up with a key needs it. Routes: `api/auth/{register,login,logout,me,username-available}`,
+  `api/me/{password,profile,organiser-key/regenerate}`, `api/organiser-keys/[key][/join]`. Pages:
+  `/login`, `/register` (live key preview + Captain/Soldier toggle, `?key=`), `/register/organiser`
+  (strength meter), `/dashboard/account`. Lane A input schemas: `src/features/identity/schemas.ts`.
 
 ## Decisions
 
