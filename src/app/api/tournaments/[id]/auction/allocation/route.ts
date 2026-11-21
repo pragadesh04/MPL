@@ -6,7 +6,6 @@ import {
   previewAllocation,
 } from '@/server/services/allocation/allocation';
 
-export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /** GET /api/tournaments/:id/auction/allocation — leftover allocation preview (§3.4). Organisers. */

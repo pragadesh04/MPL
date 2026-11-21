@@ -3,8 +3,6 @@ import { getSessionUserId } from '@/server/auth/session';
 import { handle, json, parseJson } from '@/server/http';
 import { tickAuction } from '@/server/services/auction/snapshot';
 
-export const runtime = 'nodejs';
-
 const bodySchema = z.object({ liveCode: z.string().min(1).max(64).optional() }).loose();
 
 /**

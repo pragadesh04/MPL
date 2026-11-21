@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { NotImplementedError } from '@/lib/rules/not-implemented';
 import { conflict, isUniqueViolation, mapUniqueViolation, notFound, rateLimited } from './errors';
 import { action, handle, parseJson, toApiError } from './http';
-import { readEnv } from './env-core';
+import { DEFAULT_PGLITE_URL, readEnv } from './env-core';
 
 describe('error envelope', () => {
   it('maps app, validation, not-implemented and unknown errors', () => {
@@ -72,7 +72,9 @@ describe('env', () => {
       INVITE_LINK_SECRET: 'y'.repeat(32),
       APP_ENCRYPTION_KEY: 'z'.repeat(32),
     });
-    expect(e.DATABASE_URL).toBe('pglite:./.pglite/dev');
+    expect(e.DATABASE_URL).toBe(DEFAULT_PGLITE_URL);
+    // Outside the project, so the dev file watcher never sees database writes.
+    expect(DEFAULT_PGLITE_URL).toMatch(/^pglite:\.\.\/\.pglite-/);
     expect(e.ABLY_API_KEY).toBeUndefined();
   });
 

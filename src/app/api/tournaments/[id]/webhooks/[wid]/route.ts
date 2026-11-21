@@ -3,8 +3,6 @@ import { handle, json, parseJson } from '@/server/http';
 import { updateWebhookBodySchema } from '@/server/services/webhooks/schemas';
 import { deleteWebhook, updateWebhook } from '@/server/services/webhooks/service';
 
-export const runtime = 'nodejs';
-
 type Params = { id: string; wid: string };
 
 /** PATCH /api/tournaments/:id/webhooks/:wid — change events, enabled or URL. */

@@ -3,8 +3,6 @@ import { handle, json, parseJson } from '@/server/http';
 import { createWebhookBodySchema } from '@/server/services/webhooks/schemas';
 import { createWebhook, listWebhooks } from '@/server/services/webhooks/service';
 
-export const runtime = 'nodejs';
-
 type Params = { id: string };
 
 /** GET /api/tournaments/:id/webhooks — the tournament's webhooks (masked URLs). Owner / co-admin. */

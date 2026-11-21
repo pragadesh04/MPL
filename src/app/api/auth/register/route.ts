@@ -9,7 +9,9 @@ import { registerOrganiser, registerPlayer } from '@/server/services/accounts/ac
  * in. A player with a valid organiser key also gets a pending row in that organiser's tournament.
  */
 export const POST = handle(async (req) => {
-  await enforceRateLimit(`register:ip:${clientIp(req)}`, 10, 600);
+  // Per IP, generous on purpose: a whole squad often signs up together on one venue Wi-Fi
+  // (one public IP behind NAT). 60 / 10 min still stops bulk account creation.
+  await enforceRateLimit(`register:ip:${clientIp(req)}`, 60, 600);
   const body = await parseJson(req, registerSchema);
   if (body.accountType === 'ORGANISER') {
     const user = await registerOrganiser(body);

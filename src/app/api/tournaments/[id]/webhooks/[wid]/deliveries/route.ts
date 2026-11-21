@@ -3,8 +3,6 @@ import { getSessionUserId } from '@/server/auth/session';
 import { handle, json, parseQuery } from '@/server/http';
 import { listWebhookDeliveries } from '@/server/services/webhooks/service';
 
-export const runtime = 'nodejs';
-
 type Params = { id: string; wid: string };
 
 const querySchema = z.object({ limit: z.coerce.number().int().min(1).max(200).optional() });

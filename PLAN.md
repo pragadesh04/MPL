@@ -1211,6 +1211,8 @@ the same functions to grey out buttons, and tests cover them without a DB. Never
 
 ## 10. Milestones
 
+Status (2026-11-21): M1–M6 are built and merged; M0 runs locally, deployment pending (§13.10).
+
 | #  | Milestone                                | Done when                                                                  |
 | -- | ---------------------------------------- | -------------------------------------------------------------------------- |
 | M0 | Scaffold                                 | Next.js 16 app on Vercel, Drizzle schema + first migration on Neon, Ably token endpoint + a test publish, lint/format/type-check/test scripts, health check |
@@ -1250,6 +1252,9 @@ the same functions to grey out buttons, and tests cover them without a DB. Never
 | 20 | Personal links                             | Organisers can add **captains and soldiers**, and **both** get a personal share link (reverses "links only for captains") |
 | 21 | How players get under an organiser         | A. personal link (pre-approved) · B. **organiser key**, a simple 6-character key per organiser pointing to their active tournament; the player picks captain/soldier and the organiser approves · C. **Player ID request**, which the organiser sends and the player accepts |
 | 22 | Sign-up without a key                      | Allowed: the player becomes a **free agent** under no organiser, with a public Player ID organisers can invite |
+| 23 | What Start does                            | Status → `AUCTION_LIVE`, then `initializeAuction`; the auction waits idle (captains see the lobby) until the organiser opens the first soldier |
+| 24 | Group draw                                 | Not automatic after allocation: the organiser picks a random or manual draw on the Groups page (with the ceremony) |
+| 25 | Sign-up rate limit                         | 60 per IP per 10 minutes, so a squad can register together on one venue Wi-Fi |
 
 ---
 
@@ -1369,46 +1374,46 @@ data. Without it, three sessions would each build their own app and the branches
 
 Plan sections: §1, §2 (all), §3.5, §5 (identity tables + API), §7.0–7.5.
 
-- [ ] **A1 Accounts.** Player sign-up `/register` with the optional organiser key, the live tournament preview and the Captain/Soldier toggle. Organiser sign-up `/register/organiser`. Login and logout. Username availability. Generating Player IDs and organiser keys (`formatKey`). Change password.
-- [ ] **A2 Tournaments.** Create, enforcing one active tournament per organiser (409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
-- [ ] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), changing role or removing a member, transferring ownership, and the Settings → Organisers page.
-- [ ] **A4 Path A: personal links.** The "Add person" drawer (Captain/Soldier). Token encryption and decryption, `/i/[token]` (register or log in, then claim), regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on both captain and soldier rows, and CSV import.
-- [ ] **A5 Path B: organiser key.** Joining with a key at sign-up and from the dashboard. Pending captain and soldier rows. Approve (purse or base price, bulk too), reject, switch role. Registration open/closed and the max-registrations setting. The key card with QR and WhatsApp text, and regenerate.
-- [ ] **A6 Path C: Player ID requests.** Public-card lookup, send and cancel requests, the requests inbox, accept / decline / block, expiry, rate limits, `notifications`, and live `u:<userId>` events with the bell badge.
-- [ ] **A7 Captain team setup and Teams tracker.** Team name and short code, the colour picker (taken colours greyed out live, contrast check, too-similar warning), logo or emoji, motto, live card preview, and the onboarding board with "Send reminder".
-- [ ] **A8 Password resets.** Organiser-issued one-time links for participants, and the `user:reset-password` operator script.
-- [ ] **A9 Review & Start.** `validateReadyToStart`, the checklist UI with "Fix" links, and the Start transaction: lock settings, close registration, expire pending requests, set the status, and **call the `initializeAuction` stub**.
-- [ ] **A10 Tests.** Unit and service tests, a **tenant-isolation test for every Lane A service** (organiser A on B's tournament → 404), and e2e `e2e/identity/**` (organiser creates a tournament, brings people in by all three paths, captain sets up a team, Start).
-- [ ] **STOP: Lane A.** Run the checks, write the handoff in `docs/lanes/LANE-A.md`, commit, and stop.
+- [x] **A1 Accounts.** Player sign-up `/register` with the optional organiser key, the live tournament preview and the Captain/Soldier toggle. Organiser sign-up `/register/organiser`. Login and logout. Username availability. Generating Player IDs and organiser keys (`formatKey`). Change password.
+- [x] **A2 Tournaments.** Create, enforcing one active tournament per organiser (409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
+- [x] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), changing role or removing a member, transferring ownership, and the Settings → Organisers page.
+- [x] **A4 Path A: personal links.** The "Add person" drawer (Captain/Soldier). Token encryption and decryption, `/i/[token]` (register or log in, then claim), regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on both captain and soldier rows, and CSV import.
+- [x] **A5 Path B: organiser key.** Joining with a key at sign-up and from the dashboard. Pending captain and soldier rows. Approve (purse or base price, bulk too), reject, switch role. Registration open/closed and the max-registrations setting. The key card with QR and WhatsApp text, and regenerate.
+- [x] **A6 Path C: Player ID requests.** Public-card lookup, send and cancel requests, the requests inbox, accept / decline / block, expiry, rate limits, `notifications`, and live `u:<userId>` events with the bell badge.
+- [x] **A7 Captain team setup and Teams tracker.** Team name and short code, the colour picker (taken colours greyed out live, contrast check, too-similar warning), logo or emoji, motto, live card preview, and the onboarding board with "Send reminder".
+- [x] **A8 Password resets.** Organiser-issued one-time links for participants, and the `user:reset-password` operator script.
+- [x] **A9 Review & Start.** `validateReadyToStart`, the checklist UI with "Fix" links, and the Start transaction: lock settings, close registration, expire pending requests, set the status, and **call the `initializeAuction` stub**.
+- [x] **A10 Tests.** Unit and service tests, a **tenant-isolation test for every Lane A service** (organiser A on B's tournament → 404), and e2e `e2e/identity/**` (organiser creates a tournament, brings people in by all three paths, captain sets up a team, Start).
+- [x] **STOP: Lane A.** Run the checks, write the handoff in `docs/lanes/LANE-A.md`, commit, and stop.
 
 ### 13.5 Lane B: Auction, allocation, real-time & webhooks (branch `lane/b`, port 3002, Neon branch `lane-b`)
 
 Plan sections: §2.6, §3.1–3.4, §6 (all), §7.6–7.10, §9 items 1–9 and 24–29, §12.
 
-- [ ] **B1 Rules.** `nextValidBid` (flat raise and price bands), `canTeamBid` (returns the reason), custom-bid bounds, timer and break math, `allocateLeftovers`, and `unsoldPolicy` handling. **100% branch coverage.**
-- [ ] **B2 `initializeAuction`.** Fill in the Phase 0 stub: create `auction_state`, the random pool order and starting purses.
-- [ ] **B3 Auction service.** `settleDue` (lot expiry and break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, and **publishing only after commit**.
-- [ ] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
-- [ ] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, a 10 s heartbeat, tick nudges when a countdown reaches 0, and Ably presence (online dots).
-- [ ] **B6 Screens.** Auctioneer console with the controller lock and keyboard shortcuts. Command post (roster with Release / Auction again / Assign, Rules card, squads grid). Captain phone bidding view (quick-raise chips, custom amount, reasons, haptics). Soldier live status card component. Big-screen auction view. Sounds and confetti.
-- [ ] **B7 Allocation.** Preview, the animated step-by-step run, override, confirm, then set the status to `GROUP_DRAW`.
-- [ ] **B8 Webhooks.** Settings → Integrations UI, encrypted URL and secret, HMAC signing, the Discord embed formatter, the SSRF guard, delivery with `after()` and retries, the delivery log, redeliver, test event, and auto-disable.
-- [ ] **B9 Tests.** Unit and service tests (PGlite). A **concurrency test on real Postgres** (Neon `lane-b` branch or Docker): 20 simultaneous bids, so exactly one winner per version, a purse that never goes negative and no double sale. Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers bidding against each other.
-- [ ] **STOP: Lane B.** Run the checks, write the handoff in `docs/lanes/LANE-B.md`, commit, and stop.
+- [x] **B1 Rules.** `nextValidBid` (flat raise and price bands), `canTeamBid` (returns the reason), custom-bid bounds, timer and break math, `allocateLeftovers`, and `unsoldPolicy` handling. **100% branch coverage.**
+- [x] **B2 `initializeAuction`.** Fill in the Phase 0 stub: create `auction_state`, the random pool order and starting purses.
+- [x] **B3 Auction service.** `settleDue` (lot expiry and break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, and **publishing only after commit**.
+- [x] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
+- [x] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, a 10 s heartbeat, tick nudges when a countdown reaches 0, and Ably presence (online dots).
+- [x] **B6 Screens.** Auctioneer console with the controller lock and keyboard shortcuts. Command post (roster with Release / Auction again / Assign, Rules card, squads grid). Captain phone bidding view (quick-raise chips, custom amount, reasons, haptics). Soldier live status card component. Big-screen auction view. Sounds and confetti.
+- [x] **B7 Allocation.** Preview, the animated step-by-step run, override, confirm, then set the status to `GROUP_DRAW`.
+- [x] **B8 Webhooks.** Settings → Integrations UI, encrypted URL and secret, HMAC signing, the Discord embed formatter, the SSRF guard, delivery with `after()` and retries, the delivery log, redeliver, test event, and auto-disable.
+- [x] **B9 Tests.** Unit and service tests (PGlite). A **concurrency test on real Postgres** (Neon `lane-b` branch or Docker): 20 simultaneous bids, so exactly one winner per version, a purse that never goes negative and no double sale. Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers bidding against each other.
+- [x] **STOP: Lane B.** Run the checks, write the handoff in `docs/lanes/LANE-B.md`, commit, and stop.
 
 ### 13.6 Lane C: Format, matches & public pages (branch `lane/c`, port 3003, Neon branch `lane-c`)
 
 Plan sections: §4 (all), §7 (visual direction, announcement, tournament home), §7.10a–7.13, §12.
 
-- [ ] **C1 Rules.** `generateGroups`, `generateRoundRobin`, `computeStandings` (every tie-break), `seedKnockout`, `generateBracket`, `assignMatchOrder` and `buildTournamentTree`, including the small-tournament cases (2 teams, 3–5 teams). **100% branch coverage.**
-- [ ] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, the ceremony UI, fixture and match-number generation, then set the status to `GROUP_STAGE`.
-- [ ] **C3 Results and progression.** Per-game result modal (a tied game can't be saved), mark live, per-soldier stats, reordering within a stage, Generate knockout, knockout auto-advance, safe cascading when an earlier result is edited, then `KNOCKOUT` → `COMPLETED` and the champion screen.
-- [ ] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, "Now playing / Up next", My-team filter and path highlight, placeholders, PNG export, live updates, and 404 for anyone outside the tournament.
-- [ ] **C5 Groups and knockout screens.** Standings with the Q badge and cut-off line, fixtures by matchday, and the knockout tree with zoom and pan.
-- [ ] **C6 Tournament home and announcements.** `/t/[id]` with status badges, the hero section, **Rules of engagement generated from the settings**, and the announcement banner service (post / clear, live). Also the non-auction big-screen views (groups, bracket, champion).
-- [ ] **C7 Extras.** Teams overview with image export, stats leaderboards, the audit-log viewer, the PWA manifest and offline shell, and reduced-motion support.
-- [ ] **C8 Tests.** Unit and service tests, tenant-isolation tests, and e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
-- [ ] **STOP: Lane C.** Run the checks, write the handoff in `docs/lanes/LANE-C.md`, commit, and stop.
+- [x] **C1 Rules.** `generateGroups`, `generateRoundRobin`, `computeStandings` (every tie-break), `seedKnockout`, `generateBracket`, `assignMatchOrder` and `buildTournamentTree`, including the small-tournament cases (2 teams, 3–5 teams). **100% branch coverage.**
+- [x] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, the ceremony UI, fixture and match-number generation, then set the status to `GROUP_STAGE`.
+- [x] **C3 Results and progression.** Per-game result modal (a tied game can't be saved), mark live, per-soldier stats, reordering within a stage, Generate knockout, knockout auto-advance, safe cascading when an earlier result is edited, then `KNOCKOUT` → `COMPLETED` and the champion screen.
+- [x] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, "Now playing / Up next", My-team filter and path highlight, placeholders, PNG export, live updates, and 404 for anyone outside the tournament.
+- [x] **C5 Groups and knockout screens.** Standings with the Q badge and cut-off line, fixtures by matchday, and the knockout tree with zoom and pan.
+- [x] **C6 Tournament home and announcements.** `/t/[id]` with status badges, the hero section, **Rules of engagement generated from the settings**, and the announcement banner service (post / clear, live). Also the non-auction big-screen views (groups, bracket, champion).
+- [x] **C7 Extras.** Teams overview with image export, stats leaderboards, the audit-log viewer, the PWA manifest and offline shell, and reduced-motion support.
+- [x] **C8 Tests.** Unit and service tests, tenant-isolation tests, and e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
+- [x] **STOP: Lane C.** Run the checks, write the handoff in `docs/lanes/LANE-C.md`, commit, and stop.
 
 ### 13.7 Running the lanes (what the user does)
 
@@ -1432,15 +1437,68 @@ Plan sections: §4 (all), §7 (visual direction, announcement, tournament home),
 
 ### 13.8 Phase 2: Integration (one Claude, in the main folder, after all three lanes stopped)
 
-- [ ] **I1** Read all three `docs/lanes/LANE-*.md` handoffs. Merge `lane/a`, then `lane/b`, then `lane/c` into `main` (merge commits), resolving conflicts.
-- [ ] **I2** Apply every integration note: schema changes as **one new migration**, new dependencies, and contract changes in `src/lib/schemas`.
-- [ ] **I3** Wire the lanes together: Start → `initializeAuction` → auction → allocation → `GROUP_DRAW` → `startGroupDraw`. Add role-based navigation in the app shell. Link the dashboard cards to the auction, matches and home pages. Reuse Lane A's people components inside Lane B's command post where they overlap. Show the soldier live status card (B) on the soldier portal (A).
-- [ ] **I4** Make sure `/dev/*` and the seed script can't run in production.
-- [ ] **I5** **Full-journey e2e:** two unrelated organisers at the same time → people join through all three paths → Start → live auction with simultaneous bids → allocation → groups → knockout → champion. Plus a **tenant-isolation sweep** over every route.
-- [ ] **I6** `npm run verify` passes, and `npm run test:concurrency` passes against a real Neon branch.
-- [ ] **I7** Update `CLAUDE.md` (status table, real commands, gotchas from the lane notes) and fix any drift in `PLAN.md`.
+- [x] **I1** Read all three `docs/lanes/LANE-*.md` handoffs. Merge `lane/a`, then `lane/b`, then `lane/c` into `main` (merge commits), resolving conflicts.
+- [x] **I2** Apply every integration note: schema changes as **one new migration**, new dependencies, and contract changes in `src/lib/schemas`.
+- [x] **I3** Wire the lanes together: Start → `initializeAuction` → auction → allocation → `GROUP_DRAW` → `startGroupDraw`. Add role-based navigation in the app shell. Link the dashboard cards to the auction, matches and home pages. Reuse Lane A's people components inside Lane B's command post where they overlap. Show the soldier live status card (B) on the soldier portal (A).
+- [x] **I4** Make sure `/dev/*` and the seed script can't run in production.
+- [x] **I5** **Full-journey e2e:** two unrelated organisers at the same time → people join through all three paths → Start → live auction with simultaneous bids → allocation → groups → knockout → champion. Plus a **tenant-isolation sweep** over every route.
+- [x] **I6** `npm run verify` passes, and `npm run test:concurrency` passes against a real Neon branch.
+- [x] **I7** Update `CLAUDE.md` (status table, real commands, gotchas from the lane notes) and fix any drift in `PLAN.md`.
 - [ ] **I8** Deploy: Vercel project (functions in `sin1`), Neon production (`ap-southeast-1`), Ably key, environment variables, migrate, then smoke-test on two phones and the big screen.
 - [ ] **I9** Remove the worktrees (`git worktree remove ../mpl-lane-a` and so on) once everything is merged.
+
+### 13.10 Integration outcome (Phase 2, 2026-11-21)
+
+All three lanes were merged into `main` in the order A, B, C with no conflicts (no lane had edited a
+shared file). Integration then added:
+
+- **One tournament navigation** for every lane's pages: `src/lib/navigation.ts` +
+  `src/app/(app)/t/[id]/layout.tsx`, based on role and stage. It replaces Lane C's format-only nav.
+  The top bar gets the tournament switcher (`listMyTournaments`), the live notification bell and the
+  Profile link. The service worker is registered once from the root layout.
+- **Cross-lane flow:** Start → `/t/[id]/auction`. The review step links to the auction after Start.
+  Organiser next steps point to allocation and the group draw. The soldier portal shows Lane B's
+  live status card during the auction and match links afterwards. Settings links Integrations. The
+  command post has the announcement field. The bare `/live/[liveCode]` sends the projector to the
+  auction or format view by stage.
+- **Webhooks for format events** (`groups.drawn`, `match.result`, `tournament.completed`) from
+  Lane C's services (`services/format/webhooks.ts`).
+- **Contract notes applied:** `bidBlockMessage` exported from the rules index (B1); `closedAt` on
+  `lastResult` / `lot.closed`, so a repeat UNSOLD is stamped on the big screen (B6). These are
+  jsonb / contract fields only, so **no new migration was needed**.
+- **Fixes:** the default PGlite folder moved outside the project (Lane C's dev reload loop); the
+  sign-up rate limit was raised from 10 to 60 per IP per 10 min (a squad on one venue Wi-Fi would
+  have been locked out); the redundant `export const runtime` lines were removed (Phase 0 rule);
+  `npm run db:seed` now refuses any database that isn't local PGlite / localhost unless
+  `SEED_ALLOW_REMOTE=1` (a laptop pointed at production must not wipe it).
+- **Deployment runbook:** `docs/DEPLOY.md` (accounts, environment variables, steps, smoke test).
+- **New tests:** the tenant-isolation sweep over all 65 handlers under `/api/tournaments/[id]/**`
+  (`src/app/api/tenant-isolation.test.ts`); join / setup races on real Postgres
+  (`tests/concurrency/joins.test.ts`: one active tournament, one claim per link, one row per
+  account, one team per colour); the full-journey e2e (`e2e/journey`, two unrelated organisers at
+  once, sign-up → champion).
+
+**Deferred integration notes** (each has a working workaround today; ordered by value):
+
+1. **Captain match stats** (Lane C): `player_stats` only references `players`, so captains can't
+   get kills / deaths / MVP. Needs a nullable `leader_id` (exactly one of the two), the result
+   dialog and the leaderboards. This is the most visible gap.
+2. **Photo / logo upload** (Lane A): fields take https links. Needs `@vercel/blob` (or Cloudinary)
+   and the crop UI.
+3. **`players.sold_at` / `soldAt` on squad members** (Lane B 5): the big-screen "last sales" order
+   is approximate beyond the last 30 bids, and Undo finds the sale in the audit log.
+4. **Snapshot `current.player`** (Lane B 2): the soldier on the block is sent first in `pool` with
+   status `ON_BLOCK`.
+5. **`auction.reset` event** (Lane B 3): reset emits `control.changed` + `tournament.status`, which
+   make every client refetch.
+6. **`groups.draw_order`** (Lane C): organiser tie-break draws are read back from the audit log.
+7. Client-safe live-settings schema (Lane B 7); moving Lane A's input schemas to `src/lib/schemas`
+   (Lane A 3); tournament date / venue / banner columns (Lane A 10); a cleanup job for old
+   `webhook_deliveries` (Lane B 14); the optional QStash backstop and hold-to-confirm bidding.
+
+**Not yet exercised:** real Ably (no key: the publisher records events and the screens poll every
+2 s) and Neon (the race tests ran on Docker Postgres 17, which is real Postgres but not Neon).
+Deployment (I8) waits for the user's credentials.
 
 ### 13.9 Prompts
 

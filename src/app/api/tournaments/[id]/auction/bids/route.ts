@@ -3,8 +3,6 @@ import { getSessionUserId } from '@/server/auth/session';
 import { handle, json, parseJson } from '@/server/http';
 import { placeBid } from '@/server/services/auction/bids';
 
-export const runtime = 'nodejs';
-
 /**
  * POST /api/tournaments/:id/auction/bids — `{ amount, expectedVersion, commandId, teamId? }`.
  * 409 OUTBID when expectedVersion is stale, 409 TOO_LATE when the lot already closed, 409

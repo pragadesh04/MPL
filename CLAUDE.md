@@ -14,10 +14,10 @@ The full product spec, business rules, data model, endpoints and UI screens are 
 PLAN.md §11 is the decisions log; don't re-open decided questions. PLAN.md §12 describes the
 earlier reference build (mpl-auction-blush.vercel.app), which sets the look and auction feel.
 
-> **Status: Phase 0 (Foundation, PLAN §13.3) is done and tagged `foundation`.** The shared
-> scaffold, schema, contracts, rule signatures, auth, roles, real-time base, design base and
-> seed exist; lane features (§13.4–13.6) are next. Not yet deployed: no Vercel project, Neon
-> database or Ably key has been connected (local dev runs on PGlite with real-time recorded).
+> **Status: all features are built and merged (Phase 0 + lanes A, B, C + Phase 2 integration,
+> PLAN §13).** Not yet deployed: no Vercel project, Neon database or Ably key is connected; local
+> dev runs on PGlite and, without an Ably key, the screens poll instead of receiving live events.
+> Known gaps and deferred integration notes: PLAN §13.10.
 
 ## Keep this file current (user requirement)
 
@@ -30,23 +30,21 @@ change**:
 
 If the implementation drifts from PLAN.md, update PLAN.md as well.
 
-**Parallel build (PLAN.md §13):** if you are a lane session (branch `lane/a`, `lane/b` or
-`lane/c`), the rules in §13.1 take priority. Write only your lane's files (§13.2), never edit
-shared files (including this one and PLAN.md), record progress and integration notes in
-`docs/lanes/LANE-X.md`, and stop at your STOP marker. Only the Phase 2 integration session
-updates this file.
+**Parallel build (PLAN.md §13) is finished:** the lane branches are merged into `main`, so the
+lane ownership rules no longer apply. `docs/lanes/LANE-*.md` keep each lane's decisions and are
+the best place to look up *why* a lane's code works the way it does.
 
 ## Implementation status
 
 | Milestone (PLAN.md §10)                                        | Status      |
 | -------------------------------------------------------------- | ----------- |
-| M0 Scaffold (Next.js on Vercel, Neon + Drizzle, Ably token)    | done locally (Phase 0); Vercel / Neon / Ably credentials pending |
-| M1 Shared rule functions + tests                               | not started |
-| M2 Accounts, roles, setup wizard, 3 joining paths, tenancy     | not started |
-| M3 Auction with phone bidding + outgoing webhooks              | not started |
-| M4 Leftover allocation                                         | not started |
-| M5 Groups + knockout + matches hub                             | not started |
-| M6 Polish (stats, exports, PWA, sounds)                        | not started |
+| M0 Scaffold (Next.js on Vercel, Neon + Drizzle, Ably token)    | done locally; Vercel / Neon / Ably credentials pending |
+| M1 Shared rule functions + tests                               | done (100% branch coverage on the rules) |
+| M2 Accounts, roles, setup wizard, 3 joining paths, tenancy     | done (Lane A) |
+| M3 Auction with phone bidding + outgoing webhooks              | done (Lane B); real Ably not yet exercised |
+| M4 Leftover allocation                                         | done (Lane B) |
+| M5 Groups + knockout + matches hub                             | done (Lane C) |
+| M6 Polish (stats, exports, PWA, sounds)                        | done, except photo upload and captain stats (PLAN §13.10) |
 
 ## Stack
 
@@ -87,13 +85,27 @@ npm run verify                       # lint + format:check + type-check + test +
 npm run db:generate                  # drizzle-kit generate (review the SQL before committing)
 npm run db:migrate                   # scripts/migrate.ts: DATABASE_URL_UNPOOLED → DATABASE_URL → local PGlite
 npm run db:seed -- --stage=ready     # WIPES the DB; stages: draft|ready|auction|allocated|groups|knockout
+                                     # (local PGlite / localhost only; a remote test DB needs SEED_ALLOW_REMOTE=1)
 npm test                             # Vitest: node project (*.test.ts, PGlite) + dom project (*.test.tsx, jsdom)
 npx vitest run src/lib/rules/allocateLeftovers.test.ts   # single test file
 npx vitest run -t "allocates leftovers"                  # single test by name
-npm run test:concurrency             # tests/concurrency on REAL Postgres: set CONCURRENCY_DATABASE_URL
-npm run test:e2e                     # Playwright (PORT=3001 npm run test:e2e for a lane's port)
-npm run user:reset-password -- <username>   # operator script (stub until Lane A, A8)
+npm run test:concurrency             # tests/concurrency on REAL Postgres (bid + join races); see below
+npm run test:e2e                     # Playwright; starts `next dev` on PORT (default 3000) if needed
+npx playwright test e2e/journey --project=desktop   # full cross-lane journey, self-contained
+npm run user:reset-password -- <username>   # operator: prints a one-time reset link (30 min)
 ```
+
+Real-Postgres race tests (they **wipe** the target database; never point them at real data):
+
+```bash
+docker run -d --name mpl-pg -e POSTGRES_PASSWORD=mpl -e POSTGRES_DB=mpl_concurrency -p 55432:5432 postgres:17-alpine
+CONCURRENCY_DATABASE_URL=postgres://postgres:mpl@localhost:55432/mpl_concurrency npm run test:concurrency
+```
+
+E2E specs: `e2e/journey` (two unrelated organisers, sign-up → champion, no seed needed),
+`e2e/identity` (self-contained), `e2e/auction` (seed `--stage=auction` first) and `e2e/format`
+(seed `--stage=allocated` first, `--workers=1`). If Playwright's Chromium isn't installed, set
+`E2E_CHROMIUM_PATH`.
 
 Seeded accounts (all `password123`): organisers `ravi` (8 teams) and `meera` (4 teams), unrelated;
 `ravi_coadmin`, `ravi_auctioneer`, `free_agent`, `dual_soldier` (soldier under both), captains
@@ -106,11 +118,12 @@ migrations only), `ABLY_API_KEY` (server only), `JWT_SECRET`, `INVITE_LINK_SECRE
 it breaks unclaimed personal links), `APP_ENCRYPTION_KEY` (encrypts webhook URLs and secrets;
 rotating it makes them unreadable), and `PUBLIC_APP_URL`. Region: Vercel functions in `sin1`,
 Neon in AWS `ap-southeast-1`. Empty values count as unset. Without `DATABASE_URL` the app and
-scripts use PGlite in `./.pglite/dev`; without `ABLY_API_KEY` real-time is disabled (events are
-recorded/logged, `/api/realtime/token` answers 503). Env is parsed lazily by `env()`
+scripts use PGlite in `../.pglite-<project folder>` (outside the project, see gotchas); without
+`ABLY_API_KEY` real-time is disabled (events are recorded/logged, `/api/realtime/token` answers
+503) and the auction screens poll the snapshot every 2 s instead. Env is parsed lazily by `env()`
 (`src/server/env.ts`); scripts use `src/server/env-core.ts`.
 
-## Phase 0 building blocks (use these, don't re-create them)
+## Building blocks (use these, don't re-create them)
 
 | Need | Use |
 | ---- | --- |
@@ -128,6 +141,13 @@ recorded/logged, `/api/realtime/token` answers 503). Env is parsed lazily by `en
 | Contracts | `src/lib/schemas/*` (enums, settings + `parseSettings`, realtime events, auction API, error envelope) |
 | Tests | `setupTestDb()` (fresh migrated PGlite per file, wired into `getDb()`), factories in `src/test/factories.ts` |
 | UI | `src/components/ui/*` (shadcn-style, named exports), `TeamChip`, `MpAmount`, `StatusPill`, `OpenSlot`, `JetpackSoldier`, shell in `src/components/shell/*`, `cn()`, `teamStyle(color)` |
+| Tournament navigation | `tournamentNavItems(id, roles, status)` in `src/lib/navigation.ts`, rendered once by `src/app/(app)/t/[id]/layout.tsx`. Add a page's link **there**, never a per-page nav |
+| Roster changes before Start | end every people / team / settings write with `afterRosterChange(tx, tid, onCommit, event)` (`services/people/roster-events.ts`): bumps `roster_version`, keeps DRAFT / READY in sync, publishes after commit |
+| Inbox | `notify(tx, onCommit, userId, type, data, { event })` (`services/notifications`), so the bell count and the live event can't disagree; text per type in `notification-bell.tsx` |
+| Auction writes | **every** write to `auction_state`, purses or squads goes through `runAuctionWrite` (`services/auction/run.ts`): lock, `settleDue`, savepoint command, commit, publish. Allocation uses it too |
+| Format writes | format services publish through `queueUpdates(tx, onCommit, tid, events)` (`services/format/events.ts`), one `roster_version` bump per event; pages refresh with `<LiveRefresh>` |
+| Format values | `planFormat(teams, settings)` is the only place that computes group count / advance per group; `scoreMatch` decides a match; the draw creates the whole tree (groups, fixtures, placeholder knockout, match numbers) |
+| Outgoing webhooks | collect `OutgoingEvent`s with display-ready data inside the transaction and call `queueWebhookEvents` (`services/webhooks/dispatch.ts`) from `onCommit`; format events use `services/format/webhooks.ts` |
 
 ## Architecture rules that span files
 
@@ -240,7 +260,7 @@ recorded/logged, `/api/realtime/token` answers 503). Env is parsed lazily by `en
 - **Team colour is never the only identifier.** Always show the name or short code next to it.
   Use Tailwind theme tokens (lime, amber, gold, blood, sand, muted) from the reference look, not hex.
 
-## Gotchas found while building Phase 0
+## Gotchas
 
 - **Next 16 Cache Components is OFF** (`cacheComponents: false` in `next.config.ts`). Pages read
   the session / database at request time; with it on, every such read outside `<Suspense>` is a
@@ -251,11 +271,35 @@ recorded/logged, `/api/realtime/token` answers 503). Env is parsed lazily by `en
 - **Shared rule signatures:** `src/lib/rules/index.ts` re-exports one module per rule. The owning
   lane replaces the `NotImplementedError` body in its module; signatures used by another lane
   (e.g. `planFormat` in Lane A's Rules step) change only through an integration note.
-- **Cross-lane stubs:** `initializeAuction(tx, tournamentId)` (stub creates an empty
-  `auction_state`) and `startGroupDraw(tx, tournamentId)` (stub throws 501).
+- **Stage hand-offs:** Start sets `AUCTION_LIVE`, then calls `initializeAuction`; the auction
+  starts **idle** until the controlling organiser's first `next`. Allocation ends at `GROUP_DRAW`
+  and the organiser runs the draw on `/t/[id]/groups` (`drawGroups`). `startGroupDraw` exists but
+  is deliberately not called automatically (it would skip the random-vs-manual choice and the
+  ceremony, and it publishes nothing).
+- **Versions:** `auction_state.version` counts `t:<id>:auction` events only; release / undo /
+  assign publish `people.updated` on the updates channel. Console commands and bids must send the
+  current `expectedVersion` (stale bid → 409 `OUTBID`, stale command → 409 `STALE_VERSION`);
+  roster commands don't.
+- **A unique violation aborts the surrounding Postgres transaction.** To turn it into a field-level
+  409 and keep going, wrap the write in a savepoint (`tx.transaction(...)`), as `people/teams.ts`
+  does; otherwise let it bubble and map it outside `withTransaction`.
+- **Tenant-isolation sweep** (`src/app/api/tenant-isolation.test.ts`) calls every route under
+  `/api/tournaments/[id]/**` as an unrelated organiser and requires a "doesn't exist" answer.
+  New routes there are covered automatically; keep it green.
+- **Sign-up rate limit is 60 per IP per 10 minutes** on purpose: a squad registering together on
+  one venue Wi-Fi shares one public IP.
+- **The Start check rejects duplicate in-game names** (and phones / accounts) across captains and
+  soldiers, so test data needs a unique IGN per person.
 - **PGlite is one connection per directory:** stop `next dev` before `npm run db:seed` /
   `db:migrate` on the local PGlite dir, and on Windows make sure the `next dev` child process is
   really gone (it can keep the port and the directory locked after the parent is stopped).
+- **Keep the PGlite folder outside the project** (the default is `../.pglite-<folder>`): inside it,
+  the dev watcher saw database writes and Turbopack restarted in a loop. If pages reload every
+  second anyway, stop `next dev`, delete `.next`, and start again (a stale `.next/dev` cache after a
+  force-kill does the same). After replacing a module's exports, HMR can also serve the old module
+  ("x is not a function"); restart `next dev`.
+- **Countdowns are clock-derived:** give their elements `suppressHydrationWarning` (see
+  `features/auction/shared/countdown-ring.tsx`).
 - **`server-only` throws outside Next.** Vitest aliases it to an empty module; tsx scripts must
   not import modules that import it (scripts use `connect.ts`, `migrate.ts`, `env-core.ts`).
 - **Raw SQL results differ by driver;** use `rows<T>()` from `src/server/db/sql.ts`, not

@@ -3,7 +3,6 @@ import { getSessionUserId } from '@/server/auth/session';
 import { handle, json, parseQuery } from '@/server/http';
 import { getAuctionSnapshot, getLiveAuctionSnapshot } from '@/server/services/auction/snapshot';
 
-export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const querySchema = z.object({ liveCode: z.string().min(1).max(64).optional() });
