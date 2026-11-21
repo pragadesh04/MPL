@@ -1,7 +1,14 @@
 'use client';
 
-import { GavelIcon, HourglassIcon, ShieldQuestionIcon, ShuffleIcon, UsersIcon } from 'lucide-react';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
+import { StateIcon } from '@/components/ui/state-icon';
+import {
+  GavelIcon,
+  HourglassIcon,
+  Info,
+  ShieldQuestionIcon,
+  ShuffleIcon,
+  UsersIcon,
+} from 'lucide-react';
 import { StatusPill } from '@/components/ui/status-pill';
 import { TeamChip } from '@/components/ui/team-chip';
 import { formatAmount } from '@/lib/money';
@@ -159,7 +166,7 @@ function StatusBody({
     case 'UNKNOWN':
       return (
         <div className="flex items-center gap-3">
-          <JetpackSoldier pose="idle" className="h-14 w-auto" />
+          <StateIcon icon={Info} size="sm" />
           <p className="text-sm text-muted">
             Your auction status shows here once you are in the auction.
           </p>

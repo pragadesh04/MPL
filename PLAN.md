@@ -769,20 +769,29 @@ everything else**. The main example is a **Discord channel** where the whole gro
 
 ## 7. UI / UX: screens in detail
 
-**Visual direction:** dark "tactical HUD" theme (charcoal / olive background, neon
-accent), with **team colours as the main accent wherever a team appears**. Display font for
-numbers (for example *Rajdhani* / *Oxanium*), clean sans for body text. Light mode is optional.
-Mobile-first for captains and soldiers; desktop-first for organisers; 1080p for the big screen.
+**Visual direction: professional, simple, sleek** (decided 2026-11-21, decision 26). A dark,
+quiet interface where the data and the team colours carry the screen, not decoration.
+**Team colours are the main accent wherever a team appears.** Mobile-first for captains and
+soldiers; desktop-first for organisers; 1080p for the big screen. Light mode is optional.
 
-**Visual reference: the existing build at mpl-auction-blush.vercel.app** (§12). Reuse its look:
-- near-black olive background with a faint camo blob pattern, and **lime neon** as the primary accent
-  (with amber, gold, blood-red and sand as supporting colours)
-- a **stencil display font** for headings and numbers, and Rajdhani-style body text
-- cartoon **jetpack-soldier mascots** (inline SVG)
-- pill status badges (`AUCTION COMPLETE` · `4 CAPTAINS` · `9 SOLDIERS`) and squad cards with a
-  team-colour top bar, a points-spent bar, initials avatars and dashed **"Open slot"** placeholders
-- military microcopy ("Report for duty", "Enlist", "Command post", "Rules of engagement",
-  "Hold steady!") and a sound toggle in the header.
+- **No mascots or illustrations.** The logo is a plain geometric shield mark with the "MPL"
+  wordmark (`BrandMark` / `BrandLockup`). Empty and status states use a thin-bordered circle with a
+  line icon (`StateIcon` + lucide), e.g. a gavel for "Auction starts soon".
+- **Restrained colour:** near-black olive surfaces, lime as the single brand accent used sparingly
+  (primary buttons, the active tab, live states), with amber, gold, blood-red and sand only for
+  status meaning. Labels and eyebrow text are muted, not neon. No glowing pill badges on entry pages.
+- **Type:** the display font only for headings and big numbers, plain body text everywhere else;
+  tabular digits for money and countdowns.
+- **Layout:** cards with thin borders, generous spacing, one clear primary action per screen.
+- **Copy:** plain and clear on entry screens ("Create account", "Log in"). Light military flavour
+  is fine inside the game (auction stamps, "Hold steady!"), never at the cost of clarity.
+- Motion stays purposeful (SOLD stamp, team-colour confetti for the champion), and
+  `prefers-reduced-motion` turns it off.
+
+**Reference build (mpl-auction-blush.vercel.app, §12)** still sets the auction *feel* and the squad
+card layout (team-colour top bar, points-spent bar, initials avatars, dashed "Open slot"
+placeholders, a sound toggle in the header). Its cartoon mascots, camo pattern and neon-heavy
+styling are **not** carried over.
 
 Define these as Tailwind theme tokens (`lime`, `amber`, `gold`, `blood`, `sand`, `muted`); never hex in components.
 
@@ -826,7 +835,7 @@ badge) and the user menu (profile, change password, logout).
     pending, next step, Resume button).
   - **"New tournament"** (with "Copy settings from…") is **disabled while one is active**, with the
     tooltip "Complete or cancel <name> first".
-  - **Organiser key card**: the key in large stencil type (`RV7-K2P`), Copy, QR, a **WhatsApp
+  - **Organiser key card**: the key in large display type (`RV7-K2P`), Copy, QR, a **WhatsApp
     message** template ("Join my Mini Militia tournament on MPL: <link>?key=RV7K2P"), and Regenerate.
   - Below that: **Organising for others** (co-admin / auctioneer roles), an **Archive** tab where
     cards show the champion's logo, and the pending organiser invites banner.
@@ -1255,6 +1264,7 @@ Status (2026-11-21): M1–M6 are built and merged; M0 runs locally, deployment p
 | 23 | What Start does                            | Status → `AUCTION_LIVE`, then `initializeAuction`; the auction waits idle (captains see the lobby) until the organiser opens the first soldier |
 | 24 | Group draw                                 | Not automatic after allocation: the organiser picks a random or manual draw on the Groups page (with the ceremony) |
 | 25 | Sign-up rate limit                         | 60 per IP per 10 minutes, so a squad can register together on one venue Wi-Fi |
+| 26 | Look and feel                              | **Professional, simple, sleek:** no mascots or illustrations, a plain shield brand mark, line icons for empty states, lime used sparingly, plain copy on entry screens (§7) |
 
 ---
 
@@ -1344,7 +1354,7 @@ data. Without it, three sessions would each build their own app and the branches
 | Services `src/server/services/` | `roles.ts`, stubs | `accounts/`, `tournaments/`, `organisers/`, `people/`, `joining/`, `notifications/`, `passwords/`, `start/` | `auction/`, `allocation/`, `webhooks/` | `format/`, `matches/`, `announcements/`, `stats/` |
 | API `src/app/api/` | `health`, `realtime/token`, `dev/*` | `auth`, `me`, `tournaments/[id]/(people, leaders, players, requests, registration, members, start, my-team, …)`, `invites`, `organiser-keys`, `players/by-code`, `password-resets`, `organiser-invites` | `tournaments/[id]/(auction, webhooks)` | `tournaments/[id]/(matches, groups, announcement, stats)` |
 | Pages `src/app/` | root layout, app shell, `/dev` | `(auth)/*`, `/i/[token]`, `(app)/dashboard`, `t/[id]/(setup, people, teams, settings)` | `t/[id]/(auction, command-post, allocation)`, the auction part of `live/[liveCode]` | `t/[id]` (home), `t/[id]/(matches, groups, knockout, teams-overview, stats, audit)`, the non-auction parts of `live/[liveCode]` |
-| Components | `src/components/ui/**`, mascots, shell | `src/features/identity/**` | `src/features/auction/**`, `src/features/webhooks/**` | `src/features/format/**`, `src/features/public/**` |
+| Components | `src/components/ui/**`, brand mark, shell | `src/features/identity/**` | `src/features/auction/**`, `src/features/webhooks/**` | `src/features/format/**`, `src/features/public/**` |
 | Client realtime | provider + `useChannel` | uses it (inbox) | `src/features/auction/realtime/**` (store, gap handling, tick) | uses it (match updates) |
 | Tests | helpers, PGlite `createTestDb` | next to its files | next to its files + `tests/concurrency/**` | next to its files |
 | E2E `e2e/` | config | `e2e/identity/**` | `e2e/auction/**` | `e2e/format/**` |
@@ -1363,7 +1373,7 @@ data. Without it, three sessions would each build their own app and the branches
 - [x] **Cross-lane stubs** with final signatures: `initializeAuction(tx, tournamentId)` (filled in by B) and `startGroupDraw(tx, tournamentId)` (filled in by C).
 - [x] **Auth primitives**: argon2 hash/verify, JWT session cookie (`getSessionUserId`, `setSession`, `clearSession`), `proxy.ts` cookie redirect, `loadTournamentRole` + the §2.4 permission table + `requireRole` (implemented and tested), error helpers (404 / 409, unique-violation → 409), and the Postgres rate-limit helper.
 - [x] **Real-time base**: server `publish(channel, event)` (records instead of sending in tests), channel-name helpers (`t:<id>:auction`, `t:<id>:updates`, `t:<id>:presence`, `u:<userId>`), `POST /api/realtime/token` with the capability builder, and the client `<RealtimeProvider>` + `useChannel(name, handler)`.
-- [x] **Design base** (from §7 and §12): Tailwind tokens (`lime`, `amber`, `gold`, `blood`, `sand`, `muted`, backgrounds), fonts through `next/font` (stencil display + Rajdhani-style body), shadcn/ui base components (button, input, card, dialog, dropdown, tabs, table, badge, toast, sheet), `cn()`, the jetpack-soldier mascot SVG component, and the app shell (top bar, tournament-switcher placeholder, sound toggle, announcement-banner slot).
+- [x] **Design base** (from §7 and §12): Tailwind tokens (`lime`, `amber`, `gold`, `blood`, `sand`, `muted`, backgrounds), fonts through `next/font` (stencil display + Rajdhani-style body), shadcn/ui base components (button, input, card, dialog, dropdown, tabs, table, badge, toast, sheet), `cn()`, the brand mark (originally a mascot SVG, replaced by decision 26), and the app shell (top bar, tournament-switcher placeholder, sound toggle, announcement-banner slot).
 - [x] **Test data**: `npm run db:seed -- --stage=draft|ready|auction|allocated|groups|knockout` creates **two unrelated organisers**, each with a tournament at that stage, captains with teams and soldiers, all with password `password123`. Add `/dev/login-as?username=`, which only exists when `NODE_ENV !== 'production'`.
 - [x] `GET /api/health` (database ping).
 - [x] Empty folders with a one-line `README.md` for each lane's owned paths (§13.2), and `docs/lanes/LANE-A.md`, `LANE-B.md`, `LANE-C.md` from a template (Checklist · Progress · Decisions · Integration notes · Suggested CLAUDE.md updates · Handoff).

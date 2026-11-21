@@ -5,7 +5,7 @@ import { AccountTypeCards } from '@/features/identity/components/account-type-ca
 import { RegisterPlayerForm } from '@/features/identity/components/register-player-form';
 import { getSessionUserId } from '@/server/auth/session';
 
-export const metadata = { title: 'Enlist' };
+export const metadata = { title: 'Create account' };
 
 /** Player sign-up, the default (§7.0). Accepts `?key=` from a shared organiser link. */
 export default async function RegisterPage({ searchParams }: PageProps<'/register'>) {
@@ -19,7 +19,7 @@ export default async function RegisterPage({ searchParams }: PageProps<'/registe
       <AccountTypeCards active="PLAYER" keyParam={initialKey || undefined} />
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-2xl tracking-wide">Enlist</CardTitle>
+          <CardTitle className="font-display text-2xl tracking-wide">Create account</CardTitle>
           <CardDescription>
             Create your player account. You get a Player ID that organisers can invite.
           </CardDescription>

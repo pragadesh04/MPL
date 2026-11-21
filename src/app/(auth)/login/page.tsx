@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-display text-2xl tracking-wide">Report for duty</CardTitle>
+        <CardTitle className="font-display text-2xl tracking-wide">Log in</CardTitle>
         <CardDescription>Log in with your MPL username.</CardDescription>
       </CardHeader>
       <CardContent>

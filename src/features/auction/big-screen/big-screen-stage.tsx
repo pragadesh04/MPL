@@ -1,10 +1,10 @@
 'use client';
 
+import { StateIcon } from '@/components/ui/state-icon';
+import { Gavel, Timer, TrophyIcon } from 'lucide-react';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { TrophyIcon } from 'lucide-react';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { MpAmount } from '@/components/ui/mp-amount';
 import { formatAmount } from '@/lib/money';
 import type { AuctionSnapshot } from '@/lib/schemas/auction';
@@ -266,14 +266,14 @@ function IdleHeadline({
   offsetMs: number;
 }) {
   const { seconds } = useCountdown(nextAt, offsetMs);
-  let icon: ReactNode = <JetpackSoldier pose="idle" className="h-24 w-auto" />;
+  let icon: ReactNode = <StateIcon icon={Gavel} size="lg" />;
   let text: ReactNode;
   switch (phase) {
     case 'LOBBY':
       text = 'Auction starts soon';
       break;
     case 'BREAK':
-      icon = <JetpackSoldier pose="flying" className="h-24 w-auto" />;
+      icon = <StateIcon icon={Timer} size="lg" tone="lime" />;
       text = (
         <>
           Next soldier in <span className="tabular font-numeric text-lime">{seconds}</span>…

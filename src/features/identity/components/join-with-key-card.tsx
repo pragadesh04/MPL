@@ -90,9 +90,9 @@ export function JoinWithKeyCard({ initialKey = '' }: { initialKey?: string }) {
               <RoleChoice value={role} onChange={setRole} name="join-role" />
               <Button type="button" disabled={!role || busy} onClick={join}>
                 {role === 'LEADER'
-                  ? `Enlist as captain under ${firstName(lookup.preview.organiserName)}`
+                  ? `Join as captain under ${firstName(lookup.preview.organiserName)}`
                   : role === 'PLAYER'
-                    ? `Enlist as soldier under ${firstName(lookup.preview.organiserName)}`
+                    ? `Join as soldier under ${firstName(lookup.preview.organiserName)}`
                     : 'Pick captain or soldier'}
               </Button>
             </div>

@@ -1,8 +1,8 @@
 'use client';
 
+import { StateIcon } from '@/components/ui/state-icon';
+import { ActivityIcon, Gavel } from 'lucide-react';
 import { useState } from 'react';
-import { ActivityIcon } from 'lucide-react';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { Button } from '@/components/ui/button';
 import { TeamChip } from '@/components/ui/team-chip';
 import type { AuctionSnapshot } from '@/lib/schemas/auction';
@@ -58,7 +58,7 @@ export function CaptainLobby({
   return (
     <section aria-labelledby="lobby-title" className="space-y-5">
       <div className="flex flex-col items-center gap-3 text-center">
-        <JetpackSoldier pose="idle" className="h-28 w-auto" />
+        <StateIcon icon={Gavel} size="lg" />
         <h2 id="lobby-title" className="font-display text-2xl tracking-wide uppercase">
           Waiting for the auction to start
         </h2>

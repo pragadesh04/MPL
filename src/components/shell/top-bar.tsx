@@ -1,6 +1,6 @@
+import { BrandLockup } from '@/components/brand/brand-mark';
 import Link from 'next/link';
 import type * as React from 'react';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { SoundToggle } from './sound-toggle';
 import { TournamentSwitcher, type SwitcherTournament } from './tournament-switcher';
 import { UserMenu } from './user-menu';
@@ -18,9 +18,8 @@ export function TopBar({ user, tournaments, currentTournamentId, actions }: TopB
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur print:hidden">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
-        <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2">
-          <JetpackSoldier className="size-8 text-lime" />
-          <span className="font-display text-xl tracking-wider text-lime">MPL</span>
+        <Link href={user ? '/dashboard' : '/'} aria-label="MPL home">
+          <BrandLockup />
         </Link>
         {user ? (
           <TournamentSwitcher tournaments={tournaments} currentId={currentTournamentId} />
@@ -32,7 +31,7 @@ export function TopBar({ user, tournaments, currentTournamentId, actions }: TopB
             <UserMenu displayName={user.displayName} username={user.username} />
           ) : (
             <Link href="/login" className="px-3 text-sm font-semibold text-lime">
-              Report for duty
+              Log in
             </Link>
           )}
         </div>

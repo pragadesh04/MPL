@@ -1,4 +1,5 @@
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
+import { StateIcon } from '@/components/ui/state-icon';
+import { WifiOff } from 'lucide-react';
 import { RetryButton } from '@/features/public/components/retry-button';
 
 export const metadata = { title: 'Offline' };
@@ -9,7 +10,7 @@ export const dynamic = 'force-static';
 export default function OfflinePage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-      <JetpackSoldier className="size-24 text-lime" />
+      <StateIcon icon={WifiOff} size="lg" />
       <h1 className="font-display text-4xl tracking-wide">Signal lost</h1>
       <p className="text-muted">
         You’re offline. Hold your position: as soon as the connection is back, the page reloads with

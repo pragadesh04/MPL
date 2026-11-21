@@ -1,6 +1,6 @@
-import { ChevronRight, Users } from 'lucide-react';
+import { StateIcon } from '@/components/ui/state-icon';
+import { ChevronRight, Trophy, Users } from 'lucide-react';
 import Link from 'next/link';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusPill } from '@/components/ui/status-pill';
@@ -108,7 +108,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/dashbo
               </Card>
             ) : (
               <Card className="items-center justify-center p-8 text-center">
-                <JetpackSoldier pose="cheer" className="size-24 text-lime" />
+                <StateIcon icon={Trophy} size="lg" tone="lime" />
                 <CardTitle className="font-display text-2xl tracking-wide">
                   Create your first tournament
                 </CardTitle>

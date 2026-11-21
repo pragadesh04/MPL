@@ -1,4 +1,3 @@
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { StatusPill } from '@/components/ui/status-pill';
 import type { TournamentStatus } from '@/lib/schemas/enums';
 import { cn } from '@/lib/utils';
@@ -44,9 +43,7 @@ export function TournamentHero({
 }) {
   return (
     <section className="relative overflow-hidden rounded-xl border border-border bg-surface/70 px-6 py-10 text-center">
-      <JetpackSoldier className="absolute top-6 left-6 hidden size-20 -rotate-12 text-lime opacity-70 sm:block" />
-      <JetpackSoldier className="absolute right-6 bottom-6 hidden size-16 rotate-12 text-amber opacity-60 sm:block" />
-      <p className="mb-2 text-xs font-bold tracking-[0.35em] text-lime uppercase">
+      <p className="mb-2 text-xs font-semibold tracking-[0.3em] text-muted uppercase">
         Mini Militia Premier League
       </p>
       <h1

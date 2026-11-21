@@ -144,7 +144,7 @@ export function InviteRegisterForm({
         />
       </FormField>
       <Button type="submit" size="lg" disabled={isSubmitting}>
-        {isSubmitting ? 'Enlisting…' : 'Create account & claim'}
+        {isSubmitting ? 'Creating account…' : 'Create account & claim'}
       </Button>
     </form>
   );

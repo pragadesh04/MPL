@@ -11,7 +11,7 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-lime text-lime-foreground shadow-glow hover:bg-lime/90 active:bg-lime-dim',
+        default: 'bg-lime text-lime-foreground shadow-sm hover:bg-lime/90 active:bg-lime-dim',
         secondary: 'bg-surface-2 text-foreground hover:bg-surface-2/80',
         outline:
           'border border-border bg-transparent text-foreground hover:border-lime-dim hover:bg-surface-2',

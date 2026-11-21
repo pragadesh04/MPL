@@ -108,7 +108,7 @@ test.describe('identity journey', () => {
       cap2.getByText(`You're joining`).or(cap2.getByText('You’re joining')),
     ).toBeVisible();
     await cap2.getByRole('radio', { name: /Captain/ }).click();
-    await cap2.getByRole('button', { name: /Enlist as captain under/ }).click();
+    await cap2.getByRole('button', { name: /Join as captain under/ }).click();
     await cap2.waitForURL('**/dashboard**');
     await expect(cap2.getByText(/Waiting for Eve to approve you as captain/)).toBeVisible();
 

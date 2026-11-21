@@ -1,6 +1,6 @@
+import { BrandLockup } from '@/components/brand/brand-mark';
 import { headers } from 'next/headers';
 import Link from 'next/link';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MpAmount } from '@/components/ui/mp-amount';
@@ -29,9 +29,8 @@ export default async function InvitePage({ params }: PageProps<'/i/[token]'>) {
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 py-10">
-      <Link href="/" className="flex items-center justify-center gap-2">
-        <JetpackSoldier pose="flying" className="size-12 text-lime" />
-        <span className="font-display text-3xl tracking-wider text-lime">MPL</span>
+      <Link href="/" aria-label="MPL home" className="flex justify-center">
+        <BrandLockup size="lg" />
       </Link>
       {!preview ? (
         <Card>

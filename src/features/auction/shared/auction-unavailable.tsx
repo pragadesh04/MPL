@@ -1,4 +1,5 @@
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
+import { StateIcon } from '@/components/ui/state-icon';
+import { Gavel } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { isAppError } from '@/server/errors';
 
@@ -7,7 +8,7 @@ export function AuctionNotStarted() {
   return (
     <Card className="mx-auto max-w-lg text-center">
       <CardHeader className="items-center">
-        <JetpackSoldier pose="idle" className="mx-auto size-24" />
+        <StateIcon icon={Gavel} size="lg" className="mx-auto" />
         <CardTitle className="font-display text-2xl">Auction starts soon</CardTitle>
         <CardDescription>The organisers haven&apos;t started the tournament yet.</CardDescription>
       </CardHeader>

@@ -1,12 +1,12 @@
 'use client';
 
+import { StateIcon } from '@/components/ui/state-icon';
+import { CircleCheck, PlayIcon, Shuffle, SkipForwardIcon, TriangleAlertIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { PlayIcon, SkipForwardIcon, TriangleAlertIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -99,7 +99,12 @@ export function AllocationScreen({ tournamentId, preview, canConfirm }: Allocati
     return (
       <Card className="mx-auto max-w-lg text-center">
         <CardHeader className="items-center">
-          <JetpackSoldier pose={done ? 'cheer' : 'idle'} className="mx-auto size-24" />
+          <StateIcon
+            icon={done ? CircleCheck : Shuffle}
+            size="lg"
+            tone={done ? 'lime' : 'muted'}
+            className="mx-auto"
+          />
           <CardTitle className="font-display text-2xl">
             {done ? 'Allocation complete' : 'Allocation opens after the auction'}
           </CardTitle>

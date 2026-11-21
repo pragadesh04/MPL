@@ -140,7 +140,7 @@ scripts use PGlite in `../.pglite-<project folder>` (outside the project, see go
 | Client real-time | `RealtimeProvider`, `useChannel(name, handler)`, `useConnectionState`, `useRealtimeClient` (`src/lib/realtime/provider.tsx`); channel names only via `src/lib/realtime/channels.ts` |
 | Contracts | `src/lib/schemas/*` (enums, settings + `parseSettings`, realtime events, auction API, error envelope) |
 | Tests | `setupTestDb()` (fresh migrated PGlite per file, wired into `getDb()`), factories in `src/test/factories.ts` |
-| UI | `src/components/ui/*` (shadcn-style, named exports), `TeamChip`, `MpAmount`, `StatusPill`, `OpenSlot`, `JetpackSoldier`, shell in `src/components/shell/*`, `cn()`, `teamStyle(color)` |
+| UI | `src/components/ui/*` (shadcn-style, named exports), `TeamChip`, `MpAmount`, `StatusPill`, `OpenSlot`, `StateIcon` (empty / status states), `BrandMark` / `BrandLockup` (`src/components/brand`), shell in `src/components/shell/*`, `cn()`, `teamStyle(color)` |
 | Tournament navigation | `tournamentNavItems(id, roles, status)` in `src/lib/navigation.ts`, rendered once by `src/app/(app)/t/[id]/layout.tsx`. Add a page's link **there**, never a per-page nav |
 | Roster changes before Start | end every people / team / settings write with `afterRosterChange(tx, tid, onCommit, event)` (`services/people/roster-events.ts`): bumps `roster_version`, keeps DRAFT / READY in sync, publishes after commit |
 | Inbox | `notify(tx, onCommit, userId, type, data, { event })` (`services/notifications`), so the bell count and the live event can't disagree; text per type in `notification-bell.tsx` |
@@ -259,6 +259,10 @@ scripts use PGlite in `../.pglite-<project folder>` (outside the project, see go
   role** (404 for anyone else).
 - **Team colour is never the only identifier.** Always show the name or short code next to it.
   Use Tailwind theme tokens (lime, amber, gold, blood, sand, muted) from the reference look, not hex.
+- **Look: professional, simple, sleek (PLAN §7, decision 26).** No mascots or illustrations;
+  `StateIcon` with a lucide icon for empty / status states; lime sparingly (primary action,
+  active tab, live state); muted eyebrow labels, no glowing pills on entry pages; plain copy on
+  entry screens.
 
 ## Gotchas
 

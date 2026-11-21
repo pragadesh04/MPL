@@ -1,8 +1,8 @@
 'use client';
 
+import { StateIcon } from '@/components/ui/state-icon';
+import { ChevronDownIcon, Hourglass, StarIcon, Timer, TrophyIcon, WifiOffIcon } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { ChevronDownIcon, StarIcon, TrophyIcon, WifiOffIcon } from 'lucide-react';
-import { JetpackSoldier } from '@/components/mascots/jetpack-soldier';
 import { Button } from '@/components/ui/button';
 import { MpAmount } from '@/components/ui/mp-amount';
 import { toast } from '@/components/ui/sonner';
@@ -324,7 +324,7 @@ function StatusScreen({
       {mascot === 'cheer' ? (
         <TrophyIcon className="size-10 text-gold" aria-hidden="true" />
       ) : (
-        <JetpackSoldier pose="idle" className="h-24 w-auto" />
+        <StateIcon icon={Hourglass} size="lg" />
       )}
       <h2 className="font-display text-2xl tracking-wide uppercase">{title}</h2>
       <p className="text-sm text-muted">{children}</p>
@@ -339,7 +339,7 @@ function BreakScreen({ nextAt, offsetMs }: { nextAt: string | null; offsetMs: nu
       aria-live="polite"
       className="flex flex-col items-center gap-2 rounded-lg border border-border bg-surface p-6 text-center"
     >
-      <JetpackSoldier pose="flying" className="h-20 w-auto" />
+      <StateIcon icon={Timer} size="md" tone="lime" />
       <h2 className="font-display text-2xl tracking-wide uppercase">
         Next soldier in <span className="tabular font-numeric text-lime">{seconds}</span>…
       </h2>

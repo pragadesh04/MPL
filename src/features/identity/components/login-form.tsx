@@ -58,7 +58,7 @@ export function LoginForm({ next }: { next: string }) {
         />
       </FormField>
       <Button type="submit" size="lg" disabled={isSubmitting}>
-        {isSubmitting ? 'Checking…' : 'Report for duty'}
+        {isSubmitting ? 'Checking…' : 'Log in'}
       </Button>
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <button
@@ -70,7 +70,7 @@ export function LoginForm({ next }: { next: string }) {
           Forgot password?
         </button>
         <Link href="/register" className="text-muted hover:text-foreground">
-          New here? <span className="font-semibold text-lime">Enlist</span>
+          New here? <span className="font-semibold text-lime">Create an account</span>
         </Link>
       </div>
       {showHelp ? (

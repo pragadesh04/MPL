@@ -50,9 +50,9 @@ export function RegisterPlayerForm({ initialKey }: { initialKey: string }) {
 
   const submitLabel = joinable
     ? role === 'LEADER'
-      ? `Enlist as captain under ${organiserFirst}`
+      ? `Join as captain under ${organiserFirst}`
       : role === 'PLAYER'
-        ? `Enlist as soldier under ${organiserFirst}`
+        ? `Join as soldier under ${organiserFirst}`
         : 'Pick captain or soldier'
     : 'Create account';
 
@@ -209,7 +209,7 @@ export function RegisterPlayerForm({ initialKey }: { initialKey: string }) {
       </div>
 
       <Button type="submit" size="lg" disabled={isSubmitting}>
-        {isSubmitting ? 'Enlisting…' : submitLabel}
+        {isSubmitting ? 'Creating account…' : submitLabel}
       </Button>
     </form>
   );
