@@ -7,7 +7,7 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 ## Checklist
 
 - [x] **C1 Rules.** `generateGroups`, `generateRoundRobin`, `computeStandings` (every tie-break), `seedKnockout`, `generateBracket`, `assignMatchOrder`, `buildTournamentTree`, incl. 2 teams and 3–5 teams. **100% branch coverage.**
-- [ ] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, ceremony UI, fixtures and match numbers, then status `GROUP_STAGE`.
+- [x] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, ceremony UI, fixtures and match numbers, then status `GROUP_STAGE`.
 - [ ] **C3 Results and progression.** Per-game result modal (tied game can't be saved), mark live, per-soldier stats, reorder within a stage, Generate knockout, auto-advance, safe cascading edits, `KNOCKOUT` → `COMPLETED`, champion screen.
 - [ ] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
 - [ ] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
@@ -34,6 +34,15 @@ _Append dated entries as tasks land._
   100% statements / branches / functions / lines on `planFormat`, `generateGroups`,
   `generateRoundRobin`, `computeStandings`, `knockout`, `assignMatchOrder`,
   `buildTournamentTree`). Index signatures unchanged.
+- **2026-11-21 · C2 done.** `startGroupDraw` stub filled in (signature unchanged).
+  `services/format/groupDraw.ts`: `performGroupDraw` (core, inside the caller's tx), `drawGroups`
+  (random or manual, publishes), `undoGroupDraw` (only while nothing has started). Read model
+  `services/format/data.ts` (`loadFormatData`, `getFormatPageData`) builds standings, labels and
+  the tree from the same rows. API `POST/DELETE /api/tournaments/[id]/groups/draw`. Screen
+  `/t/[id]/groups`: seeding pots, Random / Manual (drag and drop + "Move to A/B" buttons), the
+  animated ceremony (auto-plays once per device per draw, Replay / Skip, drum hit + fanfare when
+  sound is on), standings with Q badge and cut-off line. 11 service tests incl. tenant isolation.
+  Checked in the browser with `--stage=allocated` (ravi).
 
 ## Decisions
 
@@ -66,10 +75,42 @@ _Choices made inside the lane that the integrator should know about._
   every SCHEDULED match of one stage block (group, or knockout + 3rd place) in the new order; the
   numbers those matches held are handed out again. In the knockout the new order must keep rounds
   ascending (swaps within a round only), so a match never comes before its feeders.
+- **The draw creates the whole knockout tree at once**, with GROUP_POS / WINNER_OF placeholders
+  and match numbers (as the seed does), so the list and tree show the full path from the draw.
+  Bye matches exist as rows (`is_bye`, no number, SCHEDULED until Generate knockout).
+- **2 teams**: no groups; the draw creates the final with both teams (better MP spender in slot A)
+  and moves straight to `KNOCKOUT`. Manual placement is refused then.
+- **Seeding value** = MP spent (`purse_total − purse_remaining` of the captain), ties by team order.
+- **Manual placement** stores `group_teams.pot = null` (as the schema comment says); the ceremony
+  then reveals group by group.
+- **Undo draw** (`DELETE …/groups/draw`, logged `groups.draw_undone`) is allowed only while no
+  non-bye match is LIVE or DONE.
+- **Organiser tie-break draws** are stored as audit entries (`standings.tiebreak_drawn`,
+  `after = { groupId, order }`) and read back by `loadFormatData`; see integration notes.
+- **Real-time**: every Lane C write bumps `roster_version` once per event and publishes
+  `groups.updated` / `match.updated` / `tournament.status` after commit (`format/events.ts`).
+  Pages refresh via `<LiveRefresh>` (router.refresh on any `t:<id>:updates` event and on reconnect).
 
 ## Integration notes
 
 _Shared-file changes this lane needs (schema columns, dependencies, contract fields, shell / layout changes), each with the reason and the workaround used meanwhile._
+
+- **`startGroupDraw` publishes nothing** (it only gets `tx`). Whoever calls it must publish
+  `groups.updated` + `tournament.status` after commit. Recommended: do NOT call it automatically
+  when allocation ends; leave the tournament at `GROUP_DRAW` and let the organiser draw on
+  `/t/[id]/groups` (random or manual, with the ceremony). `drawGroups` handles publishing.
+- **Webhook `groups.drawn` / `match.result` / `tournament.completed`**: Lane B owns webhook
+  delivery and there is no dispatch function in Phase 0. Lane C services write the audit entries
+  (`groups.drawn`, `match.result_recorded`, `tournament.completed`); please hook webhook dispatch
+  into those service points (`performGroupDraw`, `recordResult`, completion) during integration.
+- **Tie-break draw storage**: suggest a column `groups.draw_order jsonb` (team ids, best first).
+  Workaround: latest `audit_log` row with action `standings.tiebreak_drawn` per group.
+- **Shared tournament layout**: Lane C pages render `TournamentHeader` (announcement banner, name,
+  status pill, format nav, live refresh) themselves. I3 can move it into `t/[id]/layout.tsx` and
+  add the auction / people / setup links with role-based navigation.
+- **Dev note (PGlite)**: once, right after a hot reload, a draw POST returned 200 but the write
+  was not visible afterwards; repeated runs were fine. Dev-only (single-connection PGlite);
+  worth a glance if it reappears.
 
 ## Suggested CLAUDE.md updates
 
