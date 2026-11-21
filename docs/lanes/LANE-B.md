@@ -6,7 +6,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 
 ## Checklist
 
-- [ ] **B1 Rules.** `nextValidBid` (flat raise and price bands), `canTeamBid` (returns the reason), custom-bid bounds, timer and break math, `allocateLeftovers`, `unsoldPolicy` handling. **100% branch coverage.**
+- [x] **B1 Rules.** `nextValidBid` (flat raise and price bands), `canTeamBid` (returns the reason), custom-bid bounds, timer and break math, `allocateLeftovers`, `unsoldPolicy` handling. **100% branch coverage.**
 - [ ] **B2 `initializeAuction`.** Fill in the Phase 0 stub: create `auction_state`, the random pool order and starting purses.
 - [ ] **B3 Auction service.** `settleDue` (lot expiry, break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, **publishing only after commit**.
 - [ ] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
@@ -31,15 +31,32 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 
 ## Progress
 
-_Append dated entries as tasks land._
+- 2026-11-21 · B1 rules: `nextValidBid`, `minRaise`, `quickRaiseOptions`, `isJumpBid`,
+  `canTeamBid`, `customBidBounds`, timers, `reauctionPrice`, `allocateLeftovers`,
+  `resolveUnsoldLot`, `afterRoundEnds`. 73 tests, 100% statements/branches/functions/lines on all
+  six modules.
 
 ## Decisions
 
-_Choices made inside the lane that the integrator should know about._
+- **Quick-raise chips** (`quickRaiseOptions`): `+1` is the next valid bid, `+2` / `+5` add one /
+  four more raises on top, where the raise is the step at the current bid (base price before the
+  first bid). Flat +1 at 10 MP → `[11, 12, 15]`.
+- **Jump bid** (`isJumpBid`): more than 5 raises above the next valid bid asks for confirmation.
+- **Re-auction price rounding** uses the step of the band the _reduced_ price falls in.
+- **Opening bid floor:** `nextValidBid` never returns less than 1 MP (DB `CHECK (amount > 0)`),
+  even if a base price of 0 slipped through.
+- **Round end** (`afterRoundEnds`): nobody unsold → `COMPLETE`; `REAUCTION_THEN_ALLOCATE` runs
+  rounds 2 … 1 + `unsoldReauctionRounds` then `ALLOCATE`; `RANDOM_SQUAD` / `ADMIN_DECIDES` →
+  `WAIT_FOR_ADMIN` (organiser uses Auction again / Assign).
+- `RANDOM_SQUAD` picks among teams with space **in team order**, indexed by `random()`.
 
 ## Integration notes
 
 _Shared-file changes this lane needs (schema columns, dependencies, contract fields, shell / layout changes), each with the reason and the workaround used meanwhile._
+
+1. **`src/lib/rules/index.ts`:** also export `bidBlockMessage` from `./canTeamBid` (the
+   human text for each `BidBlockReason`, used by the phone, console and API errors). Meanwhile
+   Lane B imports it from `@/lib/rules/canTeamBid` directly.
 
 ## Suggested CLAUDE.md updates
 
