@@ -11,7 +11,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B3 Auction service.** `settleDue` (lot expiry, break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, **publishing only after commit**.
 - [x] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
 - [x] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
-- [ ] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
+- [x] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
 - [ ] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
 - [ ] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
 - [ ] **B9 Tests.** Unit + service tests (PGlite). **Concurrency test on real Postgres** (20 simultaneous bids: one winner per version, purse never negative, no double sale). Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers.
@@ -49,6 +49,14 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   Zustand store with smoothed clock offset, `useAuctionRealtime` (gap refetch, reconnect refetch,
   10 s heartbeat, 2 s polling without Ably, tick nudges with retry, bid / command actions),
   `useServerNow` / `useCountdown`, `usePresence`. 15 tests (reducer, store, hook in jsdom).
+- 2026-11-21 · B6 screens. Pages: `/t/[id]/auction` (one URL, view by role: organisers →
+  auctioneer console, captains → phone bidding view, soldiers → live status card),
+  `/t/[id]/command-post`, `/live/[liveCode]/auction` (big screen, no login). Shared base in
+  `src/features/auction/shared/` (context provider, phase / bid-state helpers on the shared
+  rules, lot card, squad card, bid history, countdown ring, Web Audio sounds, confetti). Services
+  `page-data.ts` (first-render data, command-post roster) and `live-settings.ts` (Rules card
+  after Start). 70 component tests + 4 service tests. Checked in a real browser (Playwright
+  screenshots of all five screens, no console errors after fixing a countdown hydration mismatch).
 
 ## Decisions
 
@@ -94,6 +102,20 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - **Assign** accepts UNSOLD or POOL soldiers; when nothing is running and the pool and the unsold
   list are both empty, the auction completes (→ `ALLOCATION`).
 - **Pause** stores the lot's (or the break's) remaining ms; resume restores it from `now`.
+- **Screens by role on one URL:** `/t/[id]/auction` renders the console for any organiser role (a
+  read-only state with the reason for viewers who can't act, §7.3), the phone view for captains,
+  the status card for soldiers. The command post is a separate organiser page.
+- **Sounds are synthesised with the Web Audio API** (`shared/effects.ts`), so no audio assets ship;
+  `howler` is unused by Lane B. Sounds only play when `useSoundEnabled()` is true.
+- **Rules card after Start** edits only the `EDITABLE_AFTER_START` keys through
+  `updateLiveAuctionSettings` (audited `settings.live_updated`); changes apply to the next lot or
+  break.
+- **Big screen** lives at `/live/[liveCode]/auction` (a sub-route, so it never conflicts with
+  Lane C's `/live/[liveCode]` page).
+- Countdown elements use `suppressHydrationWarning`: they are clock-derived and re-render every
+  250 ms.
+- `teamBidState` returns the rule's reason `code` as well as the captain-facing text; the console
+  tiles reword by code ("Squad full", "Leading", "Can't afford n MP").
 - Snapshot reads and ticks first do an unlocked "is anything due?" check, and only then take the
   lock, so heartbeats don't queue on the row lock.
 
@@ -114,6 +136,23 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
 4. **Lane A Start (A9):** set the status to `AUCTION_LIVE` **before** calling
    `initializeAuction(tx, id)`. Lane B's engine treats `AUCTION_LIVE` with nothing on the block as
    the pre-auction lobby.
+5. **Snapshot squad members have no sale order.** The big-screen ticker orders recent sales by
+   matching members to `recentBids` (last 30). Suggested: add `soldAt` (or the winning `bidId`)
+   to `snapshotSquadMemberSchema`.
+6. **`lastResult` has no id.** The big-screen SOLD / UNSOLD stamp is keyed on player + result +
+   team + price, so the same soldier going unsold twice in a row (re-auction) isn't stamped the
+   second time. Suggested: add a sequence (the closing `version`) to `lastResultSchema`.
+7. **Live-settings form schema:** the command-post Rules form repeats the bounds of
+   `liveSettingsPatchSchema` (server-only). Suggested: export a client-safe live-settings schema
+   (with the reset ≤ timer refine) from `src/lib/schemas/settings.ts`.
+8. **Navigation (I3):** link `/t/[id]/auction`, `/t/[id]/command-post` and `/t/[id]/allocation`
+   from the app shell / tournament home by role; link `/live/[liveCode]/auction` from Lane C's live
+   page while the status is `AUCTION_LIVE` / `AUCTION_PAUSED`.
+9. **Soldier portal (I3):** render `SoldierStatusCard`
+   (`src/features/auction/soldier/soldier-status-card.tsx`) inside an `AuctionProvider` on Lane A's
+   soldier portal (§7.5).
+10. **Command post announcement field (§7.6a)** isn't built: the announcement service is Lane C's.
+    Add Lane C's Post / Clear control to the command post at integration.
 
 ## Suggested CLAUDE.md updates
 
