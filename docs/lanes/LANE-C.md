@@ -13,8 +13,8 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 - [x] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
 - [x] **C6 Tournament home and announcements.** `/t/[id]` with status badges, hero, **Rules of engagement generated from settings**, announcement banner service (post / clear, live). Non-auction big-screen views.
 - [x] **C7 Extras.** Teams overview with image export, stats leaderboards, audit-log viewer, PWA manifest + offline shell, reduced motion.
-- [ ] **C8 Tests.** Unit + service tests, tenant-isolation tests, e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
-- [ ] **STOP: Lane C.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
+- [x] **C8 Tests.** Unit + service tests, tenant-isolation tests, e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
+- [x] **STOP: Lane C.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
 ## Phase 0 pieces to build on
 
@@ -64,8 +64,44 @@ _Append dated entries as tasks land._
   pure layout (`features/format/tree-layout.ts`, tested) of group cards → rounds → final →
   champion, connectors (group positions and winner-of), winner path in the team colour, live
   pulse, BYE nodes, My team path, zoom / pan / pinch / Fit, Export PNG (html-to-image). Tapping a
-  node or row opens the match sheet. API `GET /api/tournaments/[id]/matches?view=list|tree&stage=
-&team=&group=&status=&q=` (`services/matches/hub.ts`). Filters are a pure tested module.
+  node or row opens the match sheet. API
+  `GET /api/tournaments/[id]/matches?view=list|tree&stage=&team=&group=&status=&q=`
+  (`services/matches/hub.ts`). Filters are a pure tested module.
+- **2026-11-21 · C5 done.** Groups: standings with Q badge and dashed cut-off (rows slide to new
+  places, reduced-motion aware), fixtures by matchday (from C3). Knockout `/t/[id]/knockout`:
+  seeding cards first (A1 v B2 …), then the bracket animates in (`TreeView` without groups:
+  rounds, connectors, BYE slots, winner path, zoom / pan / fit / PNG), champion screen on top once
+  the final is decided. Sound effects wait for the first user gesture.
+- **2026-11-21 · C6 done.** `/t/[id]` home (any participant, 404 otherwise): status pills
+  (status · AUCTION COMPLETE · N captains · N soldiers), hero with mascots, announcement form for
+  owner / co-admin, champion, Now playing / Up next, **Rules of engagement generated from the
+  settings** (`features/public/rules-of-engagement.ts`, tested: purse, squad size, opening bid,
+  raise incl. price bands, timer + break, unsold policy, format), big-screen link. Announcement
+  service `services/announcements/announcement.ts` + `PUT /api/tournaments/[id]/announcement`
+  (logged, live). Big screen `/live/[liveCode]/format` (no login, 404 when disabled): rotates
+  Standings / Match order / Bracket / Draw every 20 s by stage, champion at the end, live refresh
+  via a live-code Ably token.
+- **2026-11-21 · C7 done.** Teams overview `/t/[id]/teams-overview` (columns per team, captain,
+  soldiers with price and Auto / Random / Admin pick badges, spent / left meter, open slots,
+  Export PNG, print view). Stats `/t/[id]/stats` + `GET /api/tournaments/[id]/stats`: most kills,
+  best K/D, MVP awards, most expensive, best-value buy (`features/format/leaderboards.ts`, tested).
+  Audit-log viewer `/t/[id]/audit` (organisers incl. auctioneer; filter by action and actor).
+  PWA: `src/app/manifest.ts`, generated PNG icons at `/pwa-icon/192|512`, `public/sw.js`
+  (network-first navigations with an `/offline` fallback, cache-first hashed static assets, never
+  caches API or live data), registered in production only. Reduced motion: ceremony, confetti,
+  tree reveal, seeding, standings moves and the Qualified! reveal check `prefers-reduced-motion`
+  (plus the global CSS rule).
+- **2026-11-21 · C8 done.** Service tests with a tenant-isolation case for every Lane C service
+  (group draw, results, hub, announcements, home / live screen, stats / audit), pure tests for
+  every rule and helper, component tests (`standings-table.test.tsx`), and the Playwright
+  journey `e2e/format/journey.spec.ts`: draw from the UI → M1 via the result dialog → rest of
+  the groups via the API → Qualified! → Generate knockout → semis via the API → best-of-5 final
+  via the dialog → champion screen and COMPLETED; plus another organiser getting 404 on every
+  Lane C page and API, and the phone matches hub. Passed against `--stage=allocated` on port 3003.
+- **2026-11-21 · STOP.** `npm run lint`, `npm run type-check`, `npm run format:check` clean;
+  `npm test`: 31 files, 207 tests passed. Lane C rules (`planFormat`, `generateGroups`,
+  `generateRoundRobin`, `computeStandings`, `knockout`, `assignMatchOrder`,
+  `buildTournamentTree`, `matchScore`): 100% statements, branches, functions and lines.
 
 ## Decisions
 
@@ -167,23 +203,90 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
 - **Shared tournament layout**: Lane C pages render `TournamentHeader` (announcement banner, name,
   status pill, format nav, live refresh) themselves. I3 can move it into `t/[id]/layout.tsx` and
   add the auction / people / setup links with role-based navigation.
-- **Dev bug (PGlite inside the project)**: the default `DATABASE_URL` fallback
-  `pglite:./.pglite/dev` (src/server/env-core.ts) lives inside the project, so every PGlite write
-  (reads write too) makes Turbopack recompile and reload the page, which queries again: an endless
-  reload loop with ~100 page loads a minute, and it can lose a write. Fix in a shared file: move
-  the default outside the project (e.g. `pglite:../.pglite/<folder name>`) or exclude `.pglite`
-  from the dev watcher. Workaround in this lane's `.env.local` only:
-  `DATABASE_URL=pglite:../.pglite-lane-c` (and the same for `DATABASE_URL_UNPOOLED`).
-  Even with the database outside, the first visits right after `next dev` starts can reload a few
-  times while Turbopack compiles new routes (dev only, settles by itself).
-  Turbopack also served a stale SSR module once after an edit (hydration mismatch until restart).
-  Also: stop `next dev` before `npm run db:seed`; TaskStop on the npm wrapper can leave the
-  `start-server.js` child holding the port and the database.
+- **Dev environment: endless page reloads in `next dev` (not app code).** Pages sometimes
+  reloaded every ~1 s (Turbopack sends a `restart` for the framework entry chunk on each HMR
+  connect), which also loses clicks and form posts. Confirmed cause: a stale `.next/dev` cache
+  after the dev server was force-killed; `rm -rf .next` and restart fixed it every time. With the
+  PGlite folder inside the project (`pglite:./.pglite/dev`, the env-core default) the loop also
+  appeared and moving it out seemed to help, so as a precaution this lane's `.env.local` uses
+  `DATABASE_URL=pglite:../.pglite-lane-c` (same for `DATABASE_URL_UNPOOLED`). Suggest moving the
+  default PGlite folder outside the project (shared file `src/server/env-core.ts`) and adding a
+  note to CLAUDE.md. Also: stop `next dev` before `npm run db:seed` (one PGlite connection), and
+  stopping the npm wrapper can leave the `start-server.js` child holding the port and database.
 
 ## Suggested CLAUDE.md updates
 
 _Lines to add to CLAUDE.md (commands, gotchas, rules discovered)._
 
+- Commands: `npx vitest run src/lib/rules` (format rules, 100% coverage);
+  `PORT=3003 npx playwright test e2e/format --workers=1` after
+  `npm run db:seed -- --stage=allocated` (the journey changes data; the phone check reads it).
+  If Playwright's own Chromium isn't installed, set `E2E_CHROMIUM_PATH` to an installed one.
+- **`planFormat` gives the effective format** (group count, advance per group, sizes); every
+  other format rule, the draw service and the Rules-step preview read it. Don't recompute
+  `ceil(teams/4)` or clamp advance anywhere else.
+- **The draw creates the whole tree.** Groups, fixtures, the knockout bracket with placeholders
+  (GROUP_POS / WINNER_OF / LOSER_OF) and match numbers are all created by `drawGroups`.
+  Generate knockout only fills team ids from the standings and resolves byes.
+- **A match is decided by `scoreMatch` (`src/lib/rules/matchScore.ts`)**, used by the result
+  modal and the results service. Tied games can't be saved (rule + DB check).
+- **Knockout edits cascade safely**: a changed winner rewrites later slots only if those matches
+  haven't started, and asks the client to confirm (`details.needsConfirm`) when a filled slot
+  changes. Group results lock once any knockout match is LIVE or DONE.
+- **Lane C writes publish on `t:<id>:updates` after commit** with one `roster_version` bump per
+  event (`services/format/events.ts#queueUpdates`). Pages use `<LiveRefresh>`, which calls
+  `router.refresh()`.
+- Reordering keeps each stage's block of numbers. In the knockout, swaps are only allowed within
+  a round (`reorderWithinStage`). The unique index is handled with a negative-number first pass.
+- Dev: if pages reload in a loop under `next dev`, stop it, `rm -rf .next`, start again. Keep the
+  PGlite folder outside the project.
+
 ## Handoff
 
-_Filled in at STOP: what is done, what is not, how to test it, known issues._
+**Status: Lane C complete (C1–C8), stopped at STOP. Not merged, not rebased.** Branch `lane/c`,
+8 commits on top of `foundation`, only Lane C files (plus the PWA root files listed in the
+integration notes). The `startGroupDraw` stub is filled with its signature unchanged; the rules
+index exports are unchanged.
+
+**Done**
+
+- Rules: `planFormat`, `generateGroups`, `generateRoundRobin`, `computeStandings`,
+  `seedKnockout`, `generateBracket`, `roundName`, `assignMatchOrder` (+ `reorderWithinStage`),
+  `buildTournamentTree` (+ `sourceLabel`), and the new `matchScore`. 100% coverage.
+- Services: `format/` (draw, undo, read model, standings, home, live screen, events),
+  `matches/` (results, reorder, knockout generation, tie-break draw, hub),
+  `announcements/`, `stats/` (leaderboards, audit log). Every one has tenant-isolation tests.
+- API: `groups/draw` (POST, DELETE), `groups/[gid]/tiebreak`, `matches` (GET),
+  `matches/[mid]` (PATCH), `matches/order` (PATCH), `matches/knockout` (POST), `announcement`
+  (PUT), `stats` (GET), all under `/api/tournaments/[id]/`.
+- Pages: `/t/[id]` (home), `/t/[id]/groups`, `/t/[id]/matches`, `/t/[id]/knockout`,
+  `/t/[id]/teams-overview`, `/t/[id]/stats`, `/t/[id]/audit`, `/live/[liveCode]/format`,
+  `/offline`, plus `manifest.webmanifest`, `/pwa-icon/192|512` and `/sw.js`.
+
+**How to test**
+
+1. Stop `next dev`, then `npm run db:seed -- --stage=allocated` and start
+   `npm run dev -- -p 3003`.
+2. Open `/dev/login-as?username=ravi&next=/dev` to get the tournament id, then go to
+   `/t/<id>/groups`: draw, enter results from Fixtures, Generate knockout, play the bracket on
+   `/t/<id>/knockout`.
+3. Check other roles: `a_cap1` (captain, My team), `a_sol01` (soldier), `ravi_auctioneer` (can
+   view, can't edit), `meera` (other organiser, gets 404 everywhere).
+4. Other seed stages: `--stage=groups` (mid group stage, one match live) and `--stage=knockout`
+   (semi 1 done, semi 2 live).
+5. Big screen: `/live/ravi-live/format`.
+
+**Not done / known gaps**
+
+- Webhook dispatch for `groups.drawn`, `match.result` and `tournament.completed` (Lane B owns
+  delivery; see integration notes).
+- Real Ably delivery was not exercised (no `ABLY_API_KEY`). Events are asserted through the
+  recorder in tests, and pages refresh on `t:<id>:updates`.
+- Mark live, Enter result and Set time live in the match sheet (tap a row), not inline in each
+  list row.
+- No captain stats (schema; see integration notes). Standings show before the draw ceremony
+  finishes, so a viewer can see the result early. The home page shows the status pill twice
+  (header and hero).
+- The organiser tie-break draw is kept in the audit log until `groups.draw_order` exists.
+- `/live/[liveCode]` (the bare path) is not created, to avoid a conflict with Lane B.
+- The e2e runs against `next dev` and needs a fresh seed for each full run.
