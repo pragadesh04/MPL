@@ -12,7 +12,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 - [x] **A4 Path A: personal links.** "Add person" drawer. Token encryption / decryption, `/i/[token]`, regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on captain and soldier rows, CSV import.
 - [x] **A5 Path B: organiser key.** Join with a key at sign-up and from the dashboard. Pending rows. Approve (purse / base price, bulk), reject, switch role. Registration open/closed + max registrations. Key card (QR, WhatsApp text), regenerate.
 - [x] **A6 Path C: Player ID requests.** Public-card lookup, send / cancel, requests inbox, accept / decline / block, expiry, rate limits, `notifications`, live `u:<userId>` events with the bell badge.
-- [ ] **A7 Captain team setup and Teams tracker.** Name + short code, colour picker (taken colours greyed live, contrast, too-similar warning), logo / emoji, motto, live card preview, onboarding board with "Send reminder".
+- [x] **A7 Captain team setup and Teams tracker.** Name + short code, colour picker (taken colours greyed live, contrast, too-similar warning), logo / emoji, motto, live card preview, onboarding board with "Send reminder".
 - [ ] **A8 Password resets.** Organiser-issued one-time links; the `user:reset-password` operator script (stub in `scripts/user-reset-password.ts`).
 - [ ] **A9 Review & Start.** `validateReadyToStart`, checklist UI with "Fix" links, the Start transaction (lock settings, close registration, expire pending requests, set status, **call `initializeAuction`**).
 - [ ] **A10 Tests.** Unit + service tests, a **tenant-isolation test for every Lane A service**, e2e `e2e/identity/**`.
@@ -83,6 +83,18 @@ _Append dated entries as tasks land._
   import with mapping + preview, Captains/Soldiers tabs with Approved · Pending · Requests sent ·
   Rejected, capacity meter, share menu on both kinds, live refresh), `/i/[token]` (welcome card,
   register-and-claim or log in, taken / invalid states), dashboard requests inbox + bell.
+- 2026-11-21 **A7** — `people/teams.ts`: captain upsert of their team under the tournament lock
+  (name / colour / short-code unique violations → field-level 409s via a savepoint), organiser
+  edit (audited), taken colours, Teams tracker data, "Send reminder" (in-app notification for
+  linked captains + personal links for one WhatsApp message), my card (also for pending people),
+  snapshot edit until Start. Colour maths in `validateReadyToStart.ts` (CIE76 ΔE, background
+  contrast, `findTooSimilarColor`) is shared by the picker and the Start check. Routes:
+  `api/tournaments/[id]/{my-team,taken-colours,teams/[leaderId],teams/remind,me}`. Pages:
+  `/t/[id]/teams` (tracker with live card previews, edit dialog, reminder message),
+  `/t/[id]/teams/setup` (captain setup with curated palette — taken colours greyed with the team's
+  short code, custom hex with contrast + too-similar warnings, emoji / logo / motto, live team card
+  and big-screen banner previews; pending captains see "Waiting for … to approve you"),
+  `/t/[id]/people/me` (soldier portal / my card).
 
 ## Decisions
 
