@@ -64,9 +64,6 @@ export const reorderRequestSchema = z.object({
   orderedIds: z.array(idSchema).min(1).max(512),
 });
 
-/** POST /api/tournaments/:id/groups/:gid/tiebreak */
-export const tiebreakRequestSchema = z.object({}).optional();
-
 /** PUT /api/tournaments/:id/announcement */
 export const announcementRequestSchema = z.object({
   text: z

@@ -2,7 +2,7 @@ import type { FormatPlan } from '@/lib/rules/planFormat';
 import type { StandingRow } from '@/lib/rules/computeStandings';
 import type { TournamentTree } from '@/lib/rules/buildTournamentTree';
 import type { MatchSource, TournamentRole } from '@/lib/schemas/domain';
-import type { MatchStage, MatchStatus, TournamentStatus } from '@/lib/schemas/enums';
+import type { AcquiredVia, MatchStage, MatchStatus, TournamentStatus } from '@/lib/schemas/enums';
 import type { TournamentSettings } from '@/lib/schemas/settings';
 
 /**
@@ -25,6 +25,25 @@ export interface TeamView {
   purseTotal: number;
   purseRemaining: number;
   sortOrder: number;
+}
+
+/** A soldier in a squad (captains are on `TeamView.captainName`; they are never auctioned). */
+export interface PlayerView {
+  id: string;
+  teamId: string;
+  name: string;
+  ign: string | null;
+  photoUrl: string | null;
+  soldPrice: number;
+  acquiredVia: AcquiredVia;
+}
+
+/** Per-soldier stats of one match. */
+export interface PlayerStatView {
+  playerId: string;
+  kills: number;
+  deaths: number;
+  mvp: boolean;
 }
 
 export interface GameView {
@@ -61,6 +80,7 @@ export interface MatchView {
   status: MatchStatus;
   scheduledAt: string | null;
   games: GameView[];
+  playerStats: PlayerStatView[];
   /** Games won per side once any game is recorded. */
   score: { a: number; b: number } | null;
 }
@@ -102,6 +122,8 @@ export interface FormatData {
   settings: FormatSettingsView;
   plan: FormatPlan;
   teams: TeamView[];
+  /** Soldiers in squads, by team order then price. */
+  players: PlayerView[];
   groups: GroupView[];
   /** Ordered by match number; byes (no number) last. */
   matches: MatchView[];

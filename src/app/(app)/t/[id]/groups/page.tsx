@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CeremonyOnce } from '@/features/format/components/ceremony-once';
 import { GroupDrawPanel } from '@/features/format/components/group-draw-panel';
 import { GroupsBoard } from '@/features/format/components/groups-board';
+import { FormatProvider } from '@/features/format/components/match-context';
 import { TournamentHeader } from '@/features/format/components/tournament-header';
 import { UndoDrawButton } from '@/features/format/components/undo-draw-button';
 import { loadFormatPage } from '@/features/format/load-page';
@@ -16,7 +17,7 @@ export default async function GroupsPage({ params }: PageProps<'/t/[id]/groups'>
   const nothingPlayed = matches.every((m) => m.isBye || m.status === 'SCHEDULED');
 
   return (
-    <>
+    <FormatProvider data={data}>
       <TournamentHeader tournament={tournament} isOrganiser={viewer.isOrganiser} title="Groups" />
       {tournament.status === 'GROUP_DRAW' ? (
         <GroupDrawPanel
@@ -54,9 +55,9 @@ export default async function GroupsPage({ params }: PageProps<'/t/[id]/groups'>
             </div>
             <CeremonyOnce tournamentId={tournament.id} groups={groups} teams={teams} />
           </section>
-          <GroupsBoard data={data} />
+          <GroupsBoard />
         </div>
       )}
-    </>
+    </FormatProvider>
   );
 }

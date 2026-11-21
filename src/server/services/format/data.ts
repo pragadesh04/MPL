@@ -17,27 +17,27 @@ import type {
   GameView,
   GroupView,
   MatchView,
+  PlayerStatView,
+  PlayerView,
   TeamView,
   Viewer,
 } from '@/features/format/types';
 import { getReadDb, type Db } from '../../db/client';
 import {
-  auditLog,
   groups,
   groupTeams,
   leaders,
   matches,
   matchGames,
   players,
+  playerStats,
   teams,
   tournaments,
 } from '../../db/schema';
 import { dbNow } from '../../db/sql';
 import { notFound } from '../../errors';
 import { requireParticipant, type TournamentAccess } from '../roles';
-
-/** Audit action that stores an organiser tie-break draw: after = { groupId, order: teamId[] }. */
-export const TIEBREAK_AUDIT_ACTION = 'standings.tiebreak_drawn';
+import { loadDrawOrders } from './standings';
 
 export function formatSettingsView(s: TournamentSettings): FormatSettingsView {
   return {
@@ -59,24 +59,6 @@ export function scoreOf(
   if (games.length === 0) return null;
   const a = games.filter((g) => g.killsA > g.killsB).length;
   return { a, b: games.length - a };
-}
-
-/** Latest organiser tie-break draw per group (team ids, best first). */
-async function loadDrawOrders(db: Db, tournamentId: string): Promise<Map<string, string[]>> {
-  const rows = await db
-    .select({ after: auditLog.after })
-    .from(auditLog)
-    .where(and(eq(auditLog.tournamentId, tournamentId), eq(auditLog.action, TIEBREAK_AUDIT_ACTION)))
-    .orderBy(desc(auditLog.id));
-  const out = new Map<string, string[]>();
-  for (const { after } of rows) {
-    const groupId = typeof after?.groupId === 'string' ? after.groupId : null;
-    const order = Array.isArray(after?.order)
-      ? after.order.filter((x): x is string => typeof x === 'string')
-      : [];
-    if (groupId && !out.has(groupId)) out.set(groupId, order);
-  }
-  return out;
 }
 
 /**
@@ -131,14 +113,44 @@ export async function loadFormatData(
   ]);
 
   const matchIds = matchRows.map((m) => m.id);
-  const gameRows =
+  const [gameRows, statRows, playerRows] = await Promise.all([
     matchIds.length === 0
       ? []
-      : await db
+      : db
           .select()
           .from(matchGames)
           .where(inArray(matchGames.matchId, matchIds))
-          .orderBy(asc(matchGames.gameNo));
+          .orderBy(asc(matchGames.gameNo)),
+    matchIds.length === 0
+      ? []
+      : db.select().from(playerStats).where(inArray(playerStats.matchId, matchIds)),
+    db
+      .select({
+        id: players.id,
+        teamId: players.teamId,
+        name: players.name,
+        ign: players.ign,
+        photoUrl: players.photoUrl,
+        soldPrice: players.soldPrice,
+        acquiredVia: players.acquiredVia,
+      })
+      .from(players)
+      .where(
+        and(eq(players.tournamentId, tournamentId), inArray(players.status, ['SOLD', 'ALLOCATED'])),
+      )
+      .orderBy(desc(players.soldPrice), asc(players.name)),
+  ]);
+  const statsByMatch = new Map<string, PlayerStatView[]>();
+  for (const r of statRows) {
+    const list = statsByMatch.get(r.matchId) ?? [];
+    list.push({ playerId: r.playerId, kills: r.kills, deaths: r.deaths, mvp: r.mvp });
+    statsByMatch.set(r.matchId, list);
+  }
+  const playerViews: PlayerView[] = playerRows.flatMap((p) =>
+    p.teamId && p.acquiredVia
+      ? [{ ...p, teamId: p.teamId, soldPrice: p.soldPrice ?? 0, acquiredVia: p.acquiredVia }]
+      : [],
+  );
   const gamesByMatch = new Map<string, GameView[]>();
   for (const g of gameRows) {
     const list = gamesByMatch.get(g.matchId) ?? [];
@@ -232,6 +244,7 @@ export async function loadFormatData(
       status: m.status,
       scheduledAt: m.scheduledAt ? m.scheduledAt.toISOString() : null,
       games,
+      playerStats: statsByMatch.get(m.id) ?? [],
       score: scoreOf(games),
     };
   });
@@ -281,6 +294,7 @@ export async function loadFormatData(
     settings: formatSettingsView(settings),
     plan,
     teams: teamViews,
+    players: playerViews,
     groups: groupViews,
     matches: matchViews,
     tree,
