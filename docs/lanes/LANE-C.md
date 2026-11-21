@@ -12,7 +12,7 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 - [x] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
 - [x] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
 - [x] **C6 Tournament home and announcements.** `/t/[id]` with status badges, hero, **Rules of engagement generated from settings**, announcement banner service (post / clear, live). Non-auction big-screen views.
-- [ ] **C7 Extras.** Teams overview with image export, stats leaderboards, audit-log viewer, PWA manifest + offline shell, reduced motion.
+- [x] **C7 Extras.** Teams overview with image export, stats leaderboards, audit-log viewer, PWA manifest + offline shell, reduced motion.
 - [ ] **C8 Tests.** Unit + service tests, tenant-isolation tests, e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
 - [ ] **STOP: Lane C.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
@@ -123,6 +123,9 @@ _Choices made inside the lane that the integrator should know about._
 - **Announcements** publish `tournament.status` with `{ status, announcement }` (the contract's
   optional field), so every page refreshes and the banner updates live. Text is trimmed, max 200
   characters; empty clears it.
+- **Leaderboards** count only soldiers with recorded stats. Best value = kills per MP and leaves
+  out free (allocated) soldiers; K/D treats 0 deaths as 1; ties go by name. Audit log: organisers
+  (owner, co-admin, auctioneer = `tournament:view-admin`), newest 200, other roles 404 on the page.
 - **Tree** draws no line for LOSER_OF (3rd place sits under the final instead). Round-2 slots fed
   by a bye connect straight from the group position. Plain mouse wheel scrolls the page; zoom is
   Ctrl/⌘ + wheel, pinch, or the buttons.
@@ -150,6 +153,13 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
   `loadLiveScreen`). Lane B owns the auction view. Suggest the bare `/live/[liveCode]` page shows
   Lane B's auction view up to `ALLOCATION` and renders (or redirects to) the format view from
   `GROUP_DRAW` on. No file of Lane B was touched.
+- **PWA files at the app root (Lane C, C7)**: `src/app/manifest.ts`, `src/app/pwa-icon/[size]/route.tsx`,
+  `src/app/offline/page.tsx`, `public/sw.js`. The service worker is registered from Lane C's
+  `TournamentHeader` and the big screen (`ServiceWorkerRegister`); please move that into the root
+  layout so every page registers it, and add `/offline`, `/pwa-icon/*` and `/sw.js` to anything
+  that lists public paths. Manifest / icon colours are literal (they can't read CSS tokens).
+- **Print view of the teams overview** hides Lane C's own header with `print:hidden`; the shared
+  top bar still prints. Add `print:hidden` to the app shell top bar during integration.
 - **Captain stats**: `player_stats.player_id` references `players`, and captains are `leaders`,
   so per-match kills / deaths / MVP can't be recorded for captains. Suggest a nullable
   `leader_id` on `player_stats` (exactly one of player_id / leader_id), or document that only

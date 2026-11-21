@@ -2,6 +2,7 @@ import { AnnouncementBanner } from '@/components/shell/announcement-banner';
 import { StatusPill } from '@/components/ui/status-pill';
 import type { TournamentStatus } from '@/lib/schemas/enums';
 import { TOURNAMENT_STATUS_PILL } from '../status';
+import { ServiceWorkerRegister } from '@/features/public/components/service-worker';
 import { LiveRefresh } from './live-refresh';
 import { TournamentNav } from './tournament-nav';
 
@@ -24,6 +25,7 @@ export function TournamentHeader({
   return (
     <div className="mb-6 space-y-4">
       <LiveRefresh tournamentId={tournament.id} />
+      <ServiceWorkerRegister />
       <AnnouncementBanner
         text={tournament.announcement}
         className="-mx-4 -mt-6 sm:mx-0 sm:mt-0 sm:rounded-md sm:border"
