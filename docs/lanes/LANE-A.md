@@ -8,7 +8,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 
 - [x] **A1 Accounts.** Player sign-up `/register` (optional organiser key, live tournament preview, Captain/Soldier toggle). Organiser sign-up `/register/organiser`. Login / logout. Username availability. Player IDs and organiser keys (`formatKey`). Change password.
 - [x] **A2 Tournaments.** Create (one active per organiser → 409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
-- [ ] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), change role / remove, transfer ownership, Settings → Organisers.
+- [x] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), change role / remove, transfer ownership, Settings → Organisers.
 - [ ] **A4 Path A: personal links.** "Add person" drawer. Token encryption / decryption, `/i/[token]`, regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on captain and soldier rows, CSV import.
 - [ ] **A5 Path B: organiser key.** Join with a key at sign-up and from the dashboard. Pending rows. Approve (purse / base price, bulk), reject, switch role. Registration open/closed + max registrations. Key card (QR, WhatsApp text), regenerate.
 - [ ] **A6 Path C: Player ID requests.** Public-card lookup, send / cancel, requests inbox, accept / decline / block, expiry, rate limits, `notifications`, live `u:<userId>` events with the bell badge.
@@ -55,6 +55,14 @@ _Append dated entries as tasks land._
   next step), `/t/[id]/setup?step=basics|rules|review` with the 5-step progress rail, Rules form
   with autosave, increments editor (flat / bands) and live preview (falls back while Lane C's
   `planFormat` throws).
+- 2026-11-21 **A3** — `services/organisers`: members + pending invites, single-use invite links
+  (32-byte token, SHA-256 stored, 7 days, bound to the typed username/email), preview, accept by
+  token (link) or by id (dashboard banner, only for the invited account), revoke, change role,
+  remove, transfer ownership (type the name; target must be a co-admin with an organiser account;
+  the one-active-per-owner index → 409). Routes: `api/tournaments/[id]/{members[/userId],
+  organiser-invites,transfer-ownership}`, `api/organiser-invites/[ref][/accept]`. Pages:
+  `/t/[id]/settings` (index + cancel danger zone), `/t/[id]/settings/organisers`,
+  `/organiser-invite/[token]`, dashboard invites banner.
 
 ## Decisions
 
