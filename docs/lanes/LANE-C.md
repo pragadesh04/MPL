@@ -6,7 +6,7 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 
 ## Checklist
 
-- [ ] **C1 Rules.** `generateGroups`, `generateRoundRobin`, `computeStandings` (every tie-break), `seedKnockout`, `generateBracket`, `assignMatchOrder`, `buildTournamentTree`, incl. 2 teams and 3–5 teams. **100% branch coverage.**
+- [x] **C1 Rules.** `generateGroups`, `generateRoundRobin`, `computeStandings` (every tie-break), `seedKnockout`, `generateBracket`, `assignMatchOrder`, `buildTournamentTree`, incl. 2 teams and 3–5 teams. **100% branch coverage.**
 - [ ] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, ceremony UI, fixtures and match numbers, then status `GROUP_STAGE`.
 - [ ] **C3 Results and progression.** Per-game result modal (tied game can't be saved), mark live, per-soldier stats, reorder within a stage, Generate knockout, auto-advance, safe cascading edits, `KNOCKOUT` → `COMPLETED`, champion screen.
 - [ ] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
@@ -30,9 +30,42 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 
 _Append dated entries as tasks land._
 
+- **2026-11-21 · C1 done.** All seven Lane C rule modules implemented with tests (99 tests,
+  100% statements / branches / functions / lines on `planFormat`, `generateGroups`,
+  `generateRoundRobin`, `computeStandings`, `knockout`, `assignMatchOrder`,
+  `buildTournamentTree`). Index signatures unchanged.
+
 ## Decisions
 
 _Choices made inside the lane that the integrator should know about._
+
+- **`planFormat` is the single source of effective format values.** `groupCount` =
+  `settings.groupCount ?? ceil(teams/4)`, clamped so each group has ≥ 3 teams (3–5 teams always
+  one group). Advance per group is clamped to the smallest group and is at least 2 with one group.
+  `generateGroups` and the draw service read these, so the Rules-step preview and the real draw
+  agree. `advancePerGroupOf(plan)` gives the effective advance. Fewer than 2 teams → a
+  `FINAL_ONLY` plan with 0 matches and "Add at least 2 captains…".
+- **Seeding** (`seedKnockout`): tiers by finishing position (all winners in group order, then
+  runners-up…), standard bracket order (1 v N…), winners hold the byes. Later tiers are permuted
+  by a small backtracking search so no same-group round-1 tie happens and every runner-up sits in
+  the half opposite its own winner. Verified for every valid format up to 10 groups. With one group
+  the plain order is used. The shape depends only on group order, so the tree created at the draw
+  keeps its shape when teams are filled in.
+- **Bracket**: byes are always slot B of a round-1 match; the bye team (and its GROUP_POS source)
+  is copied straight into round 2, so labels never say "Winner of" a match that is never played.
+  The 3rd-place match is `round = final round, slot = 1`, and only exists when both semis are real
+  (not for a 3-team bracket).
+- **Standings tie-break**: points → head-to-head points → game diff → kill diff → total kills,
+  one criterion at a time; whenever a criterion splits a tie, the chain restarts at head-to-head
+  on each smaller tie. `needsDraw` is true only for teams still level that `drawOrder` doesn't
+  fully order. `matches` must be passed in running order (form = last 3 in that order).
+- **Match order**: within a matchday, groups take turns match by match (A, B, A, B), so with 2+
+  groups no team plays twice in a row. Knockout: round by round, slot order, 3rd place before
+  the final.
+- **Reorder** (`reorderWithinStage`, extra export in `assignMatchOrder.ts`): the client sends
+  every SCHEDULED match of one stage block (group, or knockout + 3rd place) in the new order; the
+  numbers those matches held are handed out again. In the knockout the new order must keep rounds
+  ascending (swaps within a round only), so a match never comes before its feeders.
 
 ## Integration notes
 
