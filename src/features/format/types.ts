@@ -150,3 +150,11 @@ export interface Viewer {
 export interface FormatPageData extends FormatData {
   viewer: Viewer;
 }
+
+/** Status pill counts for the tournament home and big screen. */
+export interface HomeCounts {
+  captains: number;
+  soldiers: number;
+  /** Soldiers already in a squad (sold or allocated). */
+  inSquads: number;
+}

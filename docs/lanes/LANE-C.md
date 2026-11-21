@@ -11,7 +11,7 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 - [x] **C3 Results and progression.** Per-game result modal (tied game can't be saved), mark live, per-soldier stats, reorder within a stage, Generate knockout, auto-advance, safe cascading edits, `KNOCKOUT` → `COMPLETED`, champion screen.
 - [x] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
 - [x] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
-- [ ] **C6 Tournament home and announcements.** `/t/[id]` with status badges, hero, **Rules of engagement generated from settings**, announcement banner service (post / clear, live). Non-auction big-screen views.
+- [x] **C6 Tournament home and announcements.** `/t/[id]` with status badges, hero, **Rules of engagement generated from settings**, announcement banner service (post / clear, live). Non-auction big-screen views.
 - [ ] **C7 Extras.** Teams overview with image export, stats leaderboards, audit-log viewer, PWA manifest + offline shell, reduced motion.
 - [ ] **C8 Tests.** Unit + service tests, tenant-isolation tests, e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
 - [ ] **STOP: Lane C.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
@@ -120,6 +120,9 @@ _Choices made inside the lane that the integrator should know about._
 - **Locks**: group results lock as soon as any knockout match is LIVE / DONE. Knockout matches can
   only be played after Generate knockout (status `KNOCKOUT`). Final results stay editable after
   `COMPLETED` (champion changes; clearing the final reopens `KNOCKOUT`).
+- **Announcements** publish `tournament.status` with `{ status, announcement }` (the contract's
+  optional field), so every page refreshes and the banner updates live. Text is trimmed, max 200
+  characters; empty clears it.
 - **Tree** draws no line for LOSER_OF (3rd place sits under the final instead). Round-2 slots fed
   by a bye connect straight from the group position. Plain mouse wheel scrolls the page; zoom is
   Ctrl/⌘ + wheel, pinch, or the buttons.
@@ -142,6 +145,11 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
   into those service points (`performGroupDraw`, `recordResult`, completion) during integration.
 - **Tie-break draw storage**: suggest a column `groups.draw_order jsonb` (team ids, best first).
   Workaround: latest `audit_log` row with action `standings.tiebreak_drawn` per group.
+- **`/live/[liveCode]` is split between lanes.** Lane C's format views live at
+  `src/app/live/[liveCode]/format/page.tsx` (component `BigScreenFormat`, loader
+  `loadLiveScreen`). Lane B owns the auction view. Suggest the bare `/live/[liveCode]` page shows
+  Lane B's auction view up to `ALLOCATION` and renders (or redirects to) the format view from
+  `GROUP_DRAW` on. No file of Lane B was touched.
 - **Captain stats**: `player_stats.player_id` references `players`, and captains are `leaders`,
   so per-match kills / deaths / MVP can't be recorded for captains. Suggest a nullable
   `leader_id` on `player_stats` (exactly one of player_id / leader_id), or document that only
@@ -158,6 +166,7 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
   `DATABASE_URL=pglite:../.pglite-lane-c` (and the same for `DATABASE_URL_UNPOOLED`).
   Even with the database outside, the first visits right after `next dev` starts can reload a few
   times while Turbopack compiles new routes (dev only, settles by itself).
+  Turbopack also served a stale SSR module once after an edit (hydration mismatch until restart).
   Also: stop `next dev` before `npm run db:seed`; TaskStop on the npm wrapper can leave the
   `start-server.js` child holding the port and the database.
 

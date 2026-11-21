@@ -21,9 +21,12 @@ import { ZoomPan } from './zoom-pan';
 export function TreeView({
   showGroups = true,
   fileName = 'mpl-bracket.png',
+  minimal = false,
 }: {
   showGroups?: boolean;
   fileName?: string;
+  /** Big screen: no toolbar, no "My team path". */
+  minimal?: boolean;
 }) {
   const { data, teams, openMatch } = useFormat();
   const myTeamId = data.viewer.myTeamId;
@@ -57,6 +60,7 @@ export function TreeView({
       width={layout.width}
       height={layout.height}
       fileName={fileName}
+      minimal={minimal}
       toolbarExtra={
         myTeam ? (
           <Button

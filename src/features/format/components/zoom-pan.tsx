@@ -28,6 +28,7 @@ export function ZoomPan({
   fileName,
   className,
   toolbarExtra,
+  minimal = false,
 }: {
   width: number;
   height: number;
@@ -36,6 +37,8 @@ export function ZoomPan({
   fileName: string;
   className?: string;
   toolbarExtra?: ReactNode;
+  /** Big screen: no toolbar or hint, just the fitted canvas. */
+  minimal?: boolean;
 }) {
   const frame = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -111,7 +114,7 @@ export function ZoomPan({
 
   return (
     <div className={cn('space-y-2', className)}>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={cn('flex flex-wrap items-center gap-2', minimal && 'hidden')}>
         <Button
           type="button"
           size="icon"
@@ -204,7 +207,7 @@ export function ZoomPan({
           {children}
         </div>
       </div>
-      <p className="text-xs text-muted">
+      <p className={cn('text-xs text-muted', minimal && 'hidden')}>
         Drag to move · pinch or Ctrl + scroll to zoom · tap a match for details.
       </p>
     </div>
