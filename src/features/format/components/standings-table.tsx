@@ -1,3 +1,6 @@
+'use client';
+
+import { motion, useReducedMotion } from 'framer-motion';
 import type { StandingRow } from '@/lib/rules/computeStandings';
 import { TeamChip } from '@/components/ui/team-chip';
 import { teamStyle } from '@/lib/team-color';
@@ -11,7 +14,8 @@ function signed(n: number): string {
 /**
  * Group standings (§4.3 columns): Pos · Team · P · W · L · Games · GD · Kills · KD · Pts · Form.
  * Qualifying rows get a "Q" badge and a dashed cut-off line under the last qualifying place.
- * Standings are computed from results on every request, never stored.
+ * Standings are computed from results on every request, never stored. Rows slide to their new
+ * place when positions change (off for reduced motion).
  */
 export function StandingsTable({
   rows,
@@ -27,6 +31,7 @@ export function StandingsTable({
   /** Mini table for the tree view / big screen: Pos · Team · P · Pts. */
   compact?: boolean;
 }) {
+  const reduced = useReducedMotion();
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-max text-sm">
@@ -80,8 +85,10 @@ export function StandingsTable({
             const cutoff = r.position === advance && rows.length > advance;
             const mine = myTeamId === r.teamId;
             return (
-              <tr
+              <motion.tr
                 key={r.teamId}
+                layout={reduced ? false : 'position'}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={team && mine ? teamStyle(team.color) : undefined}
                 className={cn(
                   'border-t border-border/60',
@@ -165,7 +172,7 @@ export function StandingsTable({
                     </span>
                   </td>
                 )}
-              </tr>
+              </motion.tr>
             );
           })}
         </tbody>

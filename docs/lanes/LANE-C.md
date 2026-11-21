@@ -10,7 +10,7 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 - [x] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, ceremony UI, fixtures and match numbers, then status `GROUP_STAGE`.
 - [x] **C3 Results and progression.** Per-game result modal (tied game can't be saved), mark live, per-soldier stats, reorder within a stage, Generate knockout, auto-advance, safe cascading edits, `KNOCKOUT` → `COMPLETED`, champion screen.
 - [x] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
-- [ ] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
+- [x] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
 - [ ] **C6 Tournament home and announcements.** `/t/[id]` with status badges, hero, **Rules of engagement generated from settings**, announcement banner service (post / clear, live). Non-auction big-screen views.
 - [ ] **C7 Extras.** Teams overview with image export, stats leaderboards, audit-log viewer, PWA manifest + offline shell, reduced motion.
 - [ ] **C8 Tests.** Unit + service tests, tenant-isolation tests, e2e `e2e/format/**` (seed `--stage=allocated` → draw → results → knockout → champion).
@@ -156,6 +156,8 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
   the default outside the project (e.g. `pglite:../.pglite/<folder name>`) or exclude `.pglite`
   from the dev watcher. Workaround in this lane's `.env.local` only:
   `DATABASE_URL=pglite:../.pglite-lane-c` (and the same for `DATABASE_URL_UNPOOLED`).
+  Even with the database outside, the first visits right after `next dev` starts can reload a few
+  times while Turbopack compiles new routes (dev only, settles by itself).
   Also: stop `next dev` before `npm run db:seed`; TaskStop on the npm wrapper can leave the
   `start-server.js` child holding the port and the database.
 

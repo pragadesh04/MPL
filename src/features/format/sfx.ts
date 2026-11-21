@@ -8,6 +8,10 @@
 let ctx: AudioContext | null = null;
 
 function audio(): AudioContext | null {
+  // Browsers refuse audio before the first tap / key press; don't even try (no console noise).
+  if (typeof navigator !== 'undefined' && navigator.userActivation?.hasBeenActive === false) {
+    return null;
+  }
   try {
     ctx ??= new AudioContext();
     return ctx;
