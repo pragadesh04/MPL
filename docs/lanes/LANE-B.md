@@ -15,7 +15,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
 - [x] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
 - [x] **B9 Tests.** Unit + service tests (PGlite). **Concurrency test on real Postgres** (20 simultaneous bids: one winner per version, purse never negative, no double sale). Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers.
-- [ ] **STOP: Lane B.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
+- [x] **STOP: Lane B.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
 ## Phase 0 pieces to build on
 
