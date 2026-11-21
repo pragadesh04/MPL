@@ -207,8 +207,74 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
 
 ## Suggested CLAUDE.md updates
 
-_Lines to add to CLAUDE.md (commands, gotchas, rules discovered)._
+- Status table: **M3 Auction with phone bidding + outgoing webhooks: done** and **M4 Leftover
+  allocation: done** (Lane B), once merged.
+- Commands:
+  - `CONCURRENCY_DATABASE_URL=postgres://postgres:mpl@localhost:55432/mpl_concurrency npm run test:concurrency`
+    (local Docker: `docker run -d --name mpl-pg -e POSTGRES_PASSWORD=mpl -e POSTGRES_DB=mpl_concurrency -p 55432:5432 postgres:17-alpine`).
+    The suite wipes that database. It skips itself when the variable is unset.
+  - `PORT=3002 npx playwright test e2e/auction --project=desktop` after
+    `npm run db:seed -- --stage=auction` (the spec opens its own phone contexts).
+- **Every auction write goes through `runAuctionWrite`** (`src/server/services/auction/run.ts`):
+  lock → `settleDue` → savepoint command → commit → publish. Allocation uses it too. Never write
+  `auction_state`, purses or squad membership outside it.
+- **`auction_state.version` counts `t:<id>:auction` events only**; roster changes (release, undo,
+  assign) publish `people.updated` on the updates channel instead.
+- **Console commands and bids need the current `expectedVersion`**; roster commands don't.
+  A stale console command is `409 CONFLICT / STALE_VERSION`, a stale bid `409 OUTBID`.
+- **PGlite gotcha:** stop `next dev` (and any orphaned `node` still listening on the port) before
+  `db:seed`; two processes on one `./.pglite` directory can corrupt it.
+- Without `ABLY_API_KEY` the auction screens poll the snapshot every 2 s, so everything works
+  locally without Ably, just with up to 2 s of lag.
+- Countdowns are clock-derived: use `suppressHydrationWarning` on their elements (see
+  `shared/countdown-ring.tsx`).
 
 ## Handoff
 
-_Filled in at STOP: what is done, what is not, how to test it, known issues._
+**Done:** B1–B9, one commit each (`c35a690` … `6eb7621` on `lane/b`, branched from `foundation`).
+
+| Area                                                                  | Where                                                                                                                                                          |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rules (100% branch coverage)                                          | `src/lib/rules/{nextValidBid,canTeamBid,timers,reauctionPrice,allocateLeftovers,unsoldPolicy}.ts`                                                              |
+| `initializeAuction` (cross-lane stub, signature unchanged)            | `src/server/services/auction/initializeAuction.ts`                                                                                                             |
+| Auction engine, bids, commands, snapshot, tick, page data, live rules | `src/server/services/auction/`                                                                                                                                 |
+| Allocation                                                            | `src/server/services/allocation/allocation.ts`                                                                                                                 |
+| Webhooks                                                              | `src/server/services/webhooks/`                                                                                                                                |
+| API                                                                   | `src/app/api/tournaments/[id]/auction/{route,bids,commands,tick,allocation}`, `…/webhooks/**`                                                                  |
+| Pages                                                                 | `/t/[id]/auction`, `/t/[id]/command-post`, `/t/[id]/allocation`, `/t/[id]/settings/integrations`, `/live/[liveCode]/auction`                                   |
+| Client                                                                | `src/features/auction/**` (realtime store + hooks, shared pieces, console, command post, captain, soldier, big screen, allocation), `src/features/webhooks/**` |
+| Tests                                                                 | colocated `*.test.ts(x)`, `tests/concurrency/bids.test.ts`, `e2e/auction/two-captains.spec.ts`                                                                 |
+
+**Checks at STOP (2026-11-21):** `npm run lint` exit 0 · `npm run type-check` exit 0 ·
+`npm run format:check` clean · `npm test` **37 files, 374 tests passed** ·
+`npm run test:concurrency` against Docker Postgres 17 **5/5 passed** · e2e **8/8 consecutive
+passes**. `npm run build` was **not** run (it would share `.next` with the running dev server);
+run it during integration (I6).
+
+**How to try it (port 3002, no Ably needed):**
+
+1. `npm run db:seed -- --stage=auction` (stop `next dev` first), then `npm run dev -- -p 3002`.
+2. Organiser: `/dev/login-as?username=ravi&next=/t/<id>/auction` (console) or
+   `/t/<id>/command-post`. Read-only console: `ravi_auctioneer` (until "Take control").
+3. Captains on phones: `a_cap1` … `a_cap8`; soldiers: `a_sol01` …; big screen:
+   `/live/ravi-live/auction` (no login).
+4. Webhooks: `/t/<id>/settings/integrations` (needs a public https URL to deliver).
+5. Allocation: run the auction to the end (or use `ADMIN_DECIDES` + Assign) → `/t/<id>/allocation`.
+   The seed has no `ALLOCATION`-stage tournament, so this screen was checked by component tests,
+   not in the browser.
+
+**Not done / known limits:**
+
+- Integration notes 1–14 above (contract fields, navigation, soldier portal card, announcement
+  field, notification type, settings nav link).
+- Hold-to-confirm bid mode (§7.8, optional) isn't built; tap + jump-bid confirm is.
+- The big-screen "last sales" order is approximate for sales older than the last 30 bids, and a
+  repeat UNSOLD of the same soldier isn't stamped (notes 5 and 6).
+- `Undo last sale` finds the sale from the audit log (last 50 `auction.sold` entries); there's no
+  `sold_at` column.
+- Optional QStash backstop for an auction nobody watches (§6.2) isn't built; lazy `settleDue` on
+  every read plus client ticks cover it, and an unwatched auction resumes with a fresh break.
+- Real Ably was not exercised (no key here); with the key unset the publisher records events and
+  the screens poll. Presence dots show "unknown" without Ably.
+- Docker container `mpl-lane-b-pg` (Postgres 17, port 55432) is still running for the concurrency
+  suite; remove it with `docker rm -f mpl-lane-b-pg` when done.
