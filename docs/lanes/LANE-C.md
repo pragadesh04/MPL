@@ -9,7 +9,7 @@ Owned paths: PLAN §13.2 (Lane C column). Never edit shared files; write integra
 - [x] **C1 Rules.** `generateGroups`, `generateRoundRobin`, `computeStandings` (every tie-break), `seedKnockout`, `generateBracket`, `assignMatchOrder`, `buildTournamentTree`, incl. 2 teams and 3–5 teams. **100% branch coverage.**
 - [x] **C2 Group draw.** Fill in the `startGroupDraw` stub. Pots, random or manual draw, ceremony UI, fixtures and match numbers, then status `GROUP_STAGE`.
 - [x] **C3 Results and progression.** Per-game result modal (tied game can't be saved), mark live, per-soldier stats, reorder within a stage, Generate knockout, auto-advance, safe cascading edits, `KNOCKOUT` → `COMPLETED`, champion screen.
-- [ ] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
+- [x] **C4 Matches hub** `/t/[id]/matches`. List and Tree toggle, Now playing / Up next, My-team filter and path highlight, placeholders, PNG export, live updates, 404 for outsiders.
 - [ ] **C5 Groups and knockout screens.** Standings with Q badge and cut-off line, fixtures by matchday, knockout tree with zoom and pan.
 - [ ] **C6 Tournament home and announcements.** `/t/[id]` with status badges, hero, **Rules of engagement generated from settings**, announcement banner service (post / clear, live). Non-auction big-screen views.
 - [ ] **C7 Extras.** Teams overview with image export, stats leaderboards, audit-log viewer, PWA manifest + offline shell, reduced motion.
@@ -57,6 +57,15 @@ _Append dated entries as tasks land._
   draw, Generate knockout), champion screen (trophy, squad, team-colour confetti, reduced-motion
   aware). 13 more service tests (full run to champion, cascade, byes, 3rd place, tie-break draw,
   reorder, tenant isolation).
+- **2026-11-21 · C4 done.** `/t/[id]/matches` for every participant role (404 otherwise): List |
+  Tree toggle remembered per device, sticky Now playing / Up next banner. List: stage separators,
+  placeholders, My team (on by default for captains and soldiers), stage / group / status / search
+  filters, organiser reorder by drag handle or up/down buttons (only with no filters). Tree:
+  pure layout (`features/format/tree-layout.ts`, tested) of group cards → rounds → final →
+  champion, connectors (group positions and winner-of), winner path in the team colour, live
+  pulse, BYE nodes, My team path, zoom / pan / pinch / Fit, Export PNG (html-to-image). Tapping a
+  node or row opens the match sheet. API `GET /api/tournaments/[id]/matches?view=list|tree&stage=
+&team=&group=&status=&q=` (`services/matches/hub.ts`). Filters are a pure tested module.
 
 ## Decisions
 
@@ -111,6 +120,11 @@ _Choices made inside the lane that the integrator should know about._
 - **Locks**: group results lock as soon as any knockout match is LIVE / DONE. Knockout matches can
   only be played after Generate knockout (status `KNOCKOUT`). Final results stay editable after
   `COMPLETED` (champion changes; clearing the final reopens `KNOCKOUT`).
+- **Tree** draws no line for LOSER_OF (3rd place sits under the final instead). Round-2 slots fed
+  by a bye connect straight from the group position. Plain mouse wheel scrolls the page; zoom is
+  Ctrl/⌘ + wheel, pinch, or the buttons.
+- **Reorder UI** is available only when no filters are active, so the client always sends the
+  whole stage block; the server still validates everything (`BREAKS_ROUND_ORDER` etc.).
 - **Generate knockout** is refused while a group still needs an organiser tie-break draw
   (`TIEBREAK_DRAW_NEEDED`); the draw shuffles exactly the level teams and is logged.
 
