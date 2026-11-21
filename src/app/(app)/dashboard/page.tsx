@@ -16,6 +16,8 @@ import { requirePageUser } from '@/features/identity/server/page-access';
 import { env } from '@/server/env';
 import { getUser } from '@/server/services/accounts/accounts';
 import { listMyRequests } from '@/server/services/joining/requests';
+import { unreadCount } from '@/server/services/notifications/notifications';
+import { NotificationBell } from '@/features/identity/components/notification-bell';
 import { listMyOrganiserInvites } from '@/server/services/organisers/organisers';
 import {
   getOrganiserDashboard,
@@ -28,10 +30,11 @@ export const metadata = { title: 'Dashboard' };
 export default async function DashboardPage({ searchParams }: PageProps<'/dashboard'>) {
   const userId = await requirePageUser('/dashboard');
   const { key } = await searchParams;
-  const [user, mine, requests] = await Promise.all([
+  const [user, mine, requests, unread] = await Promise.all([
     getUser(userId),
     listMyTournaments(userId),
     listMyRequests(userId),
+    unreadCount(userId),
   ]);
   const org = user.isOrganiser ? await getOrganiserDashboard(userId, mine) : null;
   const invites = await listMyOrganiserInvites(userId);
@@ -155,8 +158,12 @@ export default async function DashboardPage({ searchParams }: PageProps<'/dashbo
           <JoinWithKeyCard initialKey={typeof key === 'string' ? key : ''} />
         </div>
         <RequestsInbox userId={userId} requests={requests} />
-        <h2 id="my-tournaments" className="font-display text-2xl tracking-wide">
+        <h2
+          id="my-tournaments"
+          className="flex items-center justify-between font-display text-2xl tracking-wide"
+        >
           My tournaments
+          <NotificationBell userId={userId} initialUnread={unread} />
         </h2>
         {playing.length === 0 ? (
           <Card className="p-6 text-center text-muted">

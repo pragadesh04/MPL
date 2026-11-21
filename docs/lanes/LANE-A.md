@@ -9,9 +9,9 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 - [x] **A1 Accounts.** Player sign-up `/register` (optional organiser key, live tournament preview, Captain/Soldier toggle). Organiser sign-up `/register/organiser`. Login / logout. Username availability. Player IDs and organiser keys (`formatKey`). Change password.
 - [x] **A2 Tournaments.** Create (one active per organiser → 409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
 - [x] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), change role / remove, transfer ownership, Settings → Organisers.
-- [ ] **A4 Path A: personal links.** "Add person" drawer. Token encryption / decryption, `/i/[token]`, regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on captain and soldier rows, CSV import.
-- [ ] **A5 Path B: organiser key.** Join with a key at sign-up and from the dashboard. Pending rows. Approve (purse / base price, bulk), reject, switch role. Registration open/closed + max registrations. Key card (QR, WhatsApp text), regenerate.
-- [ ] **A6 Path C: Player ID requests.** Public-card lookup, send / cancel, requests inbox, accept / decline / block, expiry, rate limits, `notifications`, live `u:<userId>` events with the bell badge.
+- [x] **A4 Path A: personal links.** "Add person" drawer. Token encryption / decryption, `/i/[token]`, regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on captain and soldier rows, CSV import.
+- [x] **A5 Path B: organiser key.** Join with a key at sign-up and from the dashboard. Pending rows. Approve (purse / base price, bulk), reject, switch role. Registration open/closed + max registrations. Key card (QR, WhatsApp text), regenerate.
+- [x] **A6 Path C: Player ID requests.** Public-card lookup, send / cancel, requests inbox, accept / decline / block, expiry, rate limits, `notifications`, live `u:<userId>` events with the bell badge.
 - [ ] **A7 Captain team setup and Teams tracker.** Name + short code, colour picker (taken colours greyed live, contrast, too-similar warning), logo / emoji, motto, live card preview, onboarding board with "Send reminder".
 - [ ] **A8 Password resets.** Organiser-issued one-time links; the `user:reset-password` operator script (stub in `scripts/user-reset-password.ts`).
 - [ ] **A9 Review & Start.** `validateReadyToStart`, checklist UI with "Fix" links, the Start transaction (lock settings, close registration, expire pending requests, set status, **call `initializeAuction`**).
@@ -63,6 +63,26 @@ _Append dated entries as tasks land._
   organiser-invites,transfer-ownership}`, `api/organiser-invites/[ref][/accept]`. Pages:
   `/t/[id]/settings` (index + cancel danger zone), `/t/[id]/settings/organisers`,
   `/organiser-invite/[token]`, dashboard invites banner.
+- 2026-11-21 **A4 + A5 + A6** (one commit: they share the People page and board) —
+  *Path A*: `people/links.ts` (AES-256-GCM `{k,id,tid,v}` tokens), `people/people.ts` (add person,
+  CSV import all-or-nothing, roster with duplicate flags, invite link, regenerate, unlink (audited,
+  also bumps the link version), edit, remove), `joining/personalLink.ts` (preview marks "Opened";
+  claim under the tournament lock, one-time, fills empty IGN/photo/phone from the account).
+  *Path B*: `people/approvals.ts` (bulk approve with one purse / base price, reject with reason,
+  switch role keeping the approval state), registration controls on the key card.
+  *Path C*: `joining/requests.ts` (public-card lookup for organisers running an active tournament,
+  rate-limited per user + IP; send with 50/day/organiser limit, blocks, one pending per player
+  per tournament → 409; cancel; inbox; accept (replaces a pending key row); decline / decline &
+  block; lazy expiry), `notifications/notifications.ts` (`notify()` inserts + publishes
+  `notification.new` after commit; list, unread count, mark read).
+  Routes: `api/tournaments/[id]/{people[/import],leaders,players}`, `…/(leaders|players)/[rowId]
+  {,/invite-link[/regenerate],/unlink,/reject,/switch-role}`, `…/(leaders|players)/approve`,
+  `…/requests[/rid]`, `api/invites/[token][/claim]`, `api/players/by-code/[playerCode]`,
+  `api/me/requests[/rid/(accept|decline)]`, `api/me/notifications[/read]`.
+  Pages: `/t/[id]/people` (key card + registration, invite by Player ID, Add person drawer, CSV
+  import with mapping + preview, Captains/Soldiers tabs with Approved · Pending · Requests sent ·
+  Rejected, capacity meter, share menu on both kinds, live refresh), `/i/[token]` (welcome card,
+  register-and-claim or log in, taken / invalid states), dashboard requests inbox + bell.
 
 ## Decisions
 
