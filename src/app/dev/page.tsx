@@ -1,6 +1,7 @@
 import { asc } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getReadDb } from '@/server/db/client';
 import { tournaments, users } from '@/server/db/schema';
@@ -13,6 +14,8 @@ export const metadata = { title: 'Dev tools' };
  * Seed with `npm run db:seed -- --stage=draft|ready|auction|allocated|groups|knockout`.
  */
 export default async function DevPage() {
+  // Request time only: never query the database while prerendering at build time.
+  await connection();
   if (!isDevToolsEnabled()) notFound();
   const db = getReadDb();
   const [allUsers, allTournaments] = await Promise.all([

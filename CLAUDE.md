@@ -14,8 +14,10 @@ The full product spec, business rules, data model, endpoints and UI screens are 
 PLAN.md §11 is the decisions log; don't re-open decided questions. PLAN.md §12 describes the
 earlier reference build (mpl-auction-blush.vercel.app), which sets the look and auction feel.
 
-> **Status: planning. No code is scaffolded yet.** The commands and layout below are
-> the agreed target. Replace "planned" with the real details once M0 lands.
+> **Status: Phase 0 (Foundation, PLAN §13.3) is done and tagged `foundation`.** The shared
+> scaffold, schema, contracts, rule signatures, auth, roles, real-time base, design base and
+> seed exist; lane features (§13.4–13.6) are next. Not yet deployed: no Vercel project, Neon
+> database or Ably key has been connected (local dev runs on PGlite with real-time recorded).
 
 ## Keep this file current (user requirement)
 
@@ -38,7 +40,7 @@ updates this file.
 
 | Milestone (PLAN.md §10)                                        | Status      |
 | -------------------------------------------------------------- | ----------- |
-| M0 Scaffold (Next.js on Vercel, Neon + Drizzle, Ably token)    | not started |
+| M0 Scaffold (Next.js on Vercel, Neon + Drizzle, Ably token)    | done locally (Phase 0); Vercel / Neon / Ably credentials pending |
 | M1 Shared rule functions + tests                               | not started |
 | M2 Accounts, roles, setup wizard, 3 joining paths, tenancy     | not started |
 | M3 Auction with phone bidding + outgoing webhooks              | not started |
@@ -46,7 +48,7 @@ updates this file.
 | M5 Groups + knockout + matches hub                             | not started |
 | M6 Polish (stats, exports, PWA, sounds)                        | not started |
 
-## Stack (planned)
+## Stack
 
 **One full-stack Next.js app on Vercel, with no separate backend and no long-running server.**
 TypeScript strict, Next.js 16 App Router + React 19, Tailwind 4 + shadcn/ui, React Hook Form +
@@ -72,30 +74,60 @@ Zod, Zustand (live auction state only), Framer Motion.
 
 Layout and the full route map are in PLAN.md §8.
 
-## Commands (planned — confirm once scaffolded)
+## Commands
 
 ```bash
 npm install
-npm run dev                          # next dev
+npm run dev                          # next dev (lanes: npm run dev -- -p 3001|3002|3003)
 npm run build                        # next build
-npm run lint
-npm run type-check
+npm run lint                         # eslint .   (lint:fix to autofix)
+npm run format                       # prettier --write .   (format:check in verify)
+npm run type-check                   # next typegen && tsc --noEmit
+npm run verify                       # lint + format:check + type-check + test + build
 npm run db:generate                  # drizzle-kit generate (review the SQL before committing)
-npm run db:migrate                   # drizzle-kit migrate (uses DATABASE_URL_UNPOOLED)
-npm test                             # Vitest (rules + services on PGlite)
+npm run db:migrate                   # scripts/migrate.ts: DATABASE_URL_UNPOOLED → DATABASE_URL → local PGlite
+npm run db:seed -- --stage=ready     # WIPES the DB; stages: draft|ready|auction|allocated|groups|knockout
+npm test                             # Vitest: node project (*.test.ts, PGlite) + dom project (*.test.tsx, jsdom)
 npx vitest run src/lib/rules/allocateLeftovers.test.ts   # single test file
 npx vitest run -t "allocates leftovers"                  # single test by name
-npm run test:concurrency             # bid-race tests against real Postgres (Neon test branch / Docker)
-npm run test:e2e                     # Playwright
-npm run user:reset-password -- <username>   # operator: prints a one-time reset link
+npm run test:concurrency             # tests/concurrency on REAL Postgres: set CONCURRENCY_DATABASE_URL
+npm run test:e2e                     # Playwright (PORT=3001 npm run test:e2e for a lane's port)
+npm run user:reset-password -- <username>   # operator script (stub until Lane A, A8)
 ```
+
+Seeded accounts (all `password123`): organisers `ravi` (8 teams) and `meera` (4 teams), unrelated;
+`ravi_coadmin`, `ravi_auctioneer`, `free_agent`, `dual_soldier` (soldier under both), captains
+`a_cap1..8` / `b_cap1..4`, soldiers `a_sol01..26` / `b_sol01..12`. In dev, `/dev` lists them and
+`/dev/login-as?username=<name>` logs in without a password (404 in production).
 
 Env (`.env.local` in dev, Vercel project settings in prod; keep `.env.example` current):
 `DATABASE_URL` (Neon **pooled** URL, used by the app), `DATABASE_URL_UNPOOLED` (direct URL,
 migrations only), `ABLY_API_KEY` (server only), `JWT_SECRET`, `INVITE_LINK_SECRET` (rotating
 it breaks unclaimed personal links), `APP_ENCRYPTION_KEY` (encrypts webhook URLs and secrets;
 rotating it makes them unreadable), and `PUBLIC_APP_URL`. Region: Vercel functions in `sin1`,
-Neon in AWS `ap-southeast-1`.
+Neon in AWS `ap-southeast-1`. Empty values count as unset. Without `DATABASE_URL` the app and
+scripts use PGlite in `./.pglite/dev`; without `ABLY_API_KEY` real-time is disabled (events are
+recorded/logged, `/api/realtime/token` answers 503). Env is parsed lazily by `env()`
+(`src/server/env.ts`); scripts use `src/server/env-core.ts`.
+
+## Phase 0 building blocks (use these, don't re-create them)
+
+| Need | Use |
+| ---- | --- |
+| DB access / transaction | `getDb()`, `getReadDb()`, `withTransaction((tx, onCommit) => …)` in `src/server/db/client.ts`; types `Db` / `Tx` |
+| Row lock | `tx.select().from(t).where(…).for('update')`; `lockTournament(tx, id)` in `services/roster.ts` |
+| The clock | `dbNow(dbOrTx)` in `src/server/db/sql.ts` (raw rows: `rows<T>(db, sql\`…\`)`) |
+| Roles | `requireRole(userId, tournamentId, permission)`, `requireParticipant`, `loadTournamentRole` (`services/roles.ts`); table `PERMISSIONS` / `can()` in `src/lib/permissions.ts` |
+| Session | `getSessionUserId()`, `requireSessionUserId()`, `getSessionUser()`, `setSession()`, `clearSession()` (`src/server/auth/session.ts`) |
+| Secrets | `hashPassword` / `verifyPassword`, `generateToken` / `hashToken`, `encrypt` / `decrypt(Json)` (AES-256-GCM), `cryptoRandom` (`src/server/auth/*`) |
+| Errors | `notFound()`, `forbidden()`, `conflict()`, `ruleViolation()`, `mapUniqueViolation()` (`src/server/errors.ts`); route wrapper `handle()`, `parseJson()`, `json()`, `action()` (`src/server/http.ts`) |
+| Rate limits | `enforceRateLimit(key, limit, windowSeconds)` (`src/server/rate-limit.ts`) |
+| Audit / roster seq | `writeAudit(tx, …)` (`services/audit.ts`), `bumpRosterVersion(tx, id)` (`services/roster.ts`) |
+| Publish | `publishAuction` / `publishUpdate` / `publishInbox` (`src/server/realtime/publisher.ts`), only from `onCommit`; tests read `getPublishedEvents()` |
+| Client real-time | `RealtimeProvider`, `useChannel(name, handler)`, `useConnectionState`, `useRealtimeClient` (`src/lib/realtime/provider.tsx`); channel names only via `src/lib/realtime/channels.ts` |
+| Contracts | `src/lib/schemas/*` (enums, settings + `parseSettings`, realtime events, auction API, error envelope) |
+| Tests | `setupTestDb()` (fresh migrated PGlite per file, wired into `getDb()`), factories in `src/test/factories.ts` |
+| UI | `src/components/ui/*` (shadcn-style, named exports), `TeamChip`, `MpAmount`, `StatusPill`, `OpenSlot`, `JetpackSoldier`, shell in `src/components/shell/*`, `cn()`, `teamStyle(color)` |
 
 ## Architecture rules that span files
 
@@ -207,3 +239,33 @@ Neon in AWS `ap-southeast-1`.
   role** (404 for anyone else).
 - **Team colour is never the only identifier.** Always show the name or short code next to it.
   Use Tailwind theme tokens (lime, amber, gold, blood, sand, muted) from the reference look, not hex.
+
+## Gotchas found while building Phase 0
+
+- **Next 16 Cache Components is OFF** (`cacheComponents: false` in `next.config.ts`). Pages read
+  the session / database at request time; with it on, every such read outside `<Suspense>` is a
+  build error. Don't turn it on without a plan for every page. Never add `export const runtime`.
+- **Bundled Next docs win over memory:** `node_modules/next/dist/docs/` describes this exact
+  version (see `AGENTS.md`). Middleware is `src/proxy.ts`; `LayoutProps` / `PageProps` are
+  global types generated by `next typegen` (run by `npm run type-check`).
+- **Shared rule signatures:** `src/lib/rules/index.ts` re-exports one module per rule. The owning
+  lane replaces the `NotImplementedError` body in its module; signatures used by another lane
+  (e.g. `planFormat` in Lane A's Rules step) change only through an integration note.
+- **Cross-lane stubs:** `initializeAuction(tx, tournamentId)` (stub creates an empty
+  `auction_state`) and `startGroupDraw(tx, tournamentId)` (stub throws 501).
+- **PGlite is one connection per directory:** stop `next dev` before `npm run db:seed` /
+  `db:migrate` on the local PGlite dir, and on Windows make sure the `next dev` child process is
+  really gone (it can keep the port and the directory locked after the parent is stopped).
+- **`server-only` throws outside Next.** Vitest aliases it to an empty module; tsx scripts must
+  not import modules that import it (scripts use `connect.ts`, `migrate.ts`, `env-core.ts`).
+- **Raw SQL results differ by driver;** use `rows<T>()` from `src/server/db/sql.ts`, not
+  `db.execute()` directly.
+- **Schema invariants beyond PLAN §5** (documented there too): one OWNER membership per
+  tournament; `players.team_id` set exactly for SOLD / ALLOCATED; tied `match_games` rejected;
+  unique team short code; `group_teams.tournament_id` keeps a team in one group; `matches.stage =
+  'GROUP'` exactly when `group_id` is set. Insert the owner's `memberships` row together with the
+  tournament (see `makeTournament` in `src/test/factories.ts`).
+- **The `useTestDb` name trips the React hooks lint rule;** the helper is `setupTestDb()`.
+- **Pages that query the database without reading cookies get prerendered at build time.** Call
+  `await connection()` (from `next/server`) first, as `src/app/dev/page.tsx` does, or the build
+  will query (and bake in) whatever database it can reach.

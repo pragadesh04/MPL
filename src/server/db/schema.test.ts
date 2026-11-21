@@ -73,25 +73,21 @@ describe('schema constraints (PLAN §5)', () => {
     const tour = await makeTournament(t.db, { ownerId: owner.id });
     const l1 = await makeLeader(t.db, { tournamentId: tour.id });
     const l2 = await makeLeader(t.db, { tournamentId: tour.id });
-    await t.db
-      .insert(teams)
-      .values({
-        tournamentId: tour.id,
-        leaderId: l1.id,
-        name: 'Red',
-        shortName: 'RED',
-        color: '#ff0000',
-      });
+    await t.db.insert(teams).values({
+      tournamentId: tour.id,
+      leaderId: l1.id,
+      name: 'Red',
+      shortName: 'RED',
+      color: '#ff0000',
+    });
     await expect(
-      t.db
-        .insert(teams)
-        .values({
-          tournamentId: tour.id,
-          leaderId: l2.id,
-          name: 'Blue',
-          shortName: 'BLU',
-          color: '#ff0000',
-        }),
+      t.db.insert(teams).values({
+        tournamentId: tour.id,
+        leaderId: l2.id,
+        name: 'Blue',
+        shortName: 'BLU',
+        color: '#ff0000',
+      }),
     ).rejects.toSatisfy(isUniqueViolation);
 
     const [m] = await t.db

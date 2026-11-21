@@ -6,8 +6,9 @@ a purse in **Militia Points**, a **live player auction** runs on everyone's phon
 soldiers are auto-assigned, and **groups + a knockout tree** are generated from the number
 of teams. It then tracks matches through to the champion.
 
-> Status: **planning**. No code exists yet. Sections marked ❓ are open questions to
-> settle before building the related part.
+> Status: **Phase 0 (Foundation, §13.3) built and tagged `foundation`**; lanes A, B and C
+> (§13.4–13.6) come next. Sections marked ❓ are open questions to settle before building the
+> related part.
 
 ---
 
@@ -540,6 +541,15 @@ webhooks           id, tournament_id, kind ('DISCORD'|'GENERIC'), url_encrypted,
 webhook_deliveries id bigserial, webhook_id, event, payload jsonb, status, attempts, last_error, created_at
 rate_limits        key PK, count, window_start          ← serverless-safe rate limiting
 ```
+
+**Added in Phase 0** (in `src/server/db/schema.ts` and the first migration, beyond the list above):
+
+- `players.acquired_via` also allows `RANDOM_SQUAD` (unsoldPolicy, §3.1) and `ADMIN_PICK` ("Assign", §3.3), for the badges in §7.6a.
+- `players.last_activity_at` (row tracking applies to soldiers too, §2.2) and `bids.is_fallback` (§2.6 "entered by <organiser>").
+- `group_teams.tournament_id` (a team is in at most one group) and `group_teams.pot` (draw ceremony replay).
+- `auction_state.updated_at`, `matches.created_at/updated_at`, `tournaments.created_at`, `organiser_invites.created_at`, `password_resets.created_at`.
+- Extra constraints: one `OWNER` row in `memberships` per tournament (kept in step with `tournaments.owner_id`); `players.team_id` is set exactly when the status is `SOLD` / `ALLOCATED`, and then `sold_price` and `acquired_via` are set; `match_games.kills_a <> kills_b` (tied games can't be saved); unique team short code per tournament; lowercase-hex check on team colours; `matches.stage = 'GROUP'` exactly when `group_id` is set; byes have no `match_number`; `best_of IN (1,3,5,7)`; organiser invites can't grant `OWNER`; organisers must have an email and an organiser key.
+- `webhook_deliveries.status` is an enum `PENDING | SUCCEEDED | FAILED`.
 
 **Profile snapshot:** when someone joins a tournament, their name / IGN / photo are **copied**
 into `leaders` / `players`. Past tournaments keep the names as they were, and a profile change
@@ -1336,24 +1346,24 @@ data. Without it, three sessions would each build their own app and the branches
 
 ### 13.3 Phase 0: Foundation (Claude 1, alone, in the main folder)
 
-- [ ] `git init`, branch `main`, `.gitignore` (`node_modules`, `.next`, `.env*` except `.env.example`). Commit the current `PLAN.md` and `CLAUDE.md`.
-- [ ] Scaffold **Next.js 16** (App Router, TypeScript strict, `src/`, Tailwind 4, ESLint) plus Prettier, with the `@/` alias.
-- [ ] **Install every dependency in §8 up front** (Drizzle, `@neondatabase/serverless`, `drizzle-kit`, `@electric-sql/pglite`, `ably`, `jose`, `@node-rs/argon2`, `zod`, `react-hook-form`, `@hookform/resolvers`, `zustand`, `framer-motion`, `canvas-confetti`, `howler`, `papaparse`, `qrcode.react`, `html-to-image`, `pino`, `server-only`, shadcn/ui deps, `lucide-react`, `clsx`, `tailwind-merge`, Vitest, Testing Library, Playwright), so lanes never need to touch `package.json`.
-- [ ] Scripts: `dev`, `build`, `start`, `lint`, `format`, `type-check`, `test`, `test:concurrency`, `test:e2e`, `db:generate`, `db:migrate`, `db:seed`, `verify` (lint + type-check + test + build).
-- [ ] Vitest (node for server code, jsdom for components), the `createTestDb()` helper (PGlite + all migrations applied), and the Playwright config.
-- [ ] **Complete Drizzle schema from §5**: every table, enum, check, foreign key and partial unique index. First migration generated and committed. `db/client.ts` (Neon Pool + HTTP) and a `withTransaction(fn)` helper.
-- [ ] `src/server/env.ts` (Zod-validated env vars) and `.env.example`.
-- [ ] **Contracts** in `src/lib/schemas/`: tournament settings with defaults (§3.1, §4.1), the real-time event envelope plus every event type (§6.5), auction API payloads, and the shared domain types. `src/lib/money.ts`.
-- [ ] `src/lib/rules/index.ts`: **typed signatures for every rule function**, each throwing `NotImplemented`, with JSDoc pointing to the PLAN section.
-- [ ] **Cross-lane stubs** with final signatures: `initializeAuction(tx, tournamentId)` (filled in by B) and `startGroupDraw(tx, tournamentId)` (filled in by C).
-- [ ] **Auth primitives**: argon2 hash/verify, JWT session cookie (`getSessionUserId`, `setSession`, `clearSession`), `proxy.ts` cookie redirect, `loadTournamentRole` + the §2.4 permission table + `requireRole` (implemented and tested), error helpers (404 / 409, unique-violation → 409), and the Postgres rate-limit helper.
-- [ ] **Real-time base**: server `publish(channel, event)` (records instead of sending in tests), channel-name helpers (`t:<id>:auction`, `t:<id>:updates`, `t:<id>:presence`, `u:<userId>`), `POST /api/realtime/token` with the capability builder, and the client `<RealtimeProvider>` + `useChannel(name, handler)`.
-- [ ] **Design base** (from §7 and §12): Tailwind tokens (`lime`, `amber`, `gold`, `blood`, `sand`, `muted`, backgrounds), fonts through `next/font` (stencil display + Rajdhani-style body), shadcn/ui base components (button, input, card, dialog, dropdown, tabs, table, badge, toast, sheet), `cn()`, the jetpack-soldier mascot SVG component, and the app shell (top bar, tournament-switcher placeholder, sound toggle, announcement-banner slot).
-- [ ] **Test data**: `npm run db:seed -- --stage=draft|ready|auction|allocated|groups|knockout` creates **two unrelated organisers**, each with a tournament at that stage, captains with teams and soldiers, all with password `password123`. Add `/dev/login-as?username=`, which only exists when `NODE_ENV !== 'production'`.
-- [ ] `GET /api/health` (database ping).
-- [ ] Empty folders with a one-line `README.md` for each lane's owned paths (§13.2), and `docs/lanes/LANE-A.md`, `LANE-B.md`, `LANE-C.md` from a template (Checklist · Progress · Decisions · Integration notes · Suggested CLAUDE.md updates · Handoff).
-- [ ] `npm run verify` passes. Commit `chore: foundation`, then run `git tag foundation`.
-- [ ] **STOP. Phase 0 done.** The user now creates the three worktrees (§13.7).
+- [x] `git init`, branch `main`, `.gitignore` (`node_modules`, `.next`, `.env*` except `.env.example`). Commit the current `PLAN.md` and `CLAUDE.md`.
+- [x] Scaffold **Next.js 16** (App Router, TypeScript strict, `src/`, Tailwind 4, ESLint) plus Prettier, with the `@/` alias.
+- [x] **Install every dependency in §8 up front** (Drizzle, `@neondatabase/serverless`, `drizzle-kit`, `@electric-sql/pglite`, `ably`, `jose`, `@node-rs/argon2`, `zod`, `react-hook-form`, `@hookform/resolvers`, `zustand`, `framer-motion`, `canvas-confetti`, `howler`, `papaparse`, `qrcode.react`, `html-to-image`, `pino`, `server-only`, shadcn/ui deps, `lucide-react`, `clsx`, `tailwind-merge`, Vitest, Testing Library, Playwright), so lanes never need to touch `package.json`.
+- [x] Scripts: `dev`, `build`, `start`, `lint`, `format`, `type-check`, `test`, `test:concurrency`, `test:e2e`, `db:generate`, `db:migrate`, `db:seed`, `verify` (lint + type-check + test + build).
+- [x] Vitest (node for server code, jsdom for components), the `createTestDb()` helper (PGlite + all migrations applied), and the Playwright config.
+- [x] **Complete Drizzle schema from §5**: every table, enum, check, foreign key and partial unique index. First migration generated and committed. `db/client.ts` (Neon Pool + HTTP) and a `withTransaction(fn)` helper.
+- [x] `src/server/env.ts` (Zod-validated env vars) and `.env.example`.
+- [x] **Contracts** in `src/lib/schemas/`: tournament settings with defaults (§3.1, §4.1), the real-time event envelope plus every event type (§6.5), auction API payloads, and the shared domain types. `src/lib/money.ts`.
+- [x] `src/lib/rules/index.ts`: **typed signatures for every rule function**, each throwing `NotImplemented`, with JSDoc pointing to the PLAN section.
+- [x] **Cross-lane stubs** with final signatures: `initializeAuction(tx, tournamentId)` (filled in by B) and `startGroupDraw(tx, tournamentId)` (filled in by C).
+- [x] **Auth primitives**: argon2 hash/verify, JWT session cookie (`getSessionUserId`, `setSession`, `clearSession`), `proxy.ts` cookie redirect, `loadTournamentRole` + the §2.4 permission table + `requireRole` (implemented and tested), error helpers (404 / 409, unique-violation → 409), and the Postgres rate-limit helper.
+- [x] **Real-time base**: server `publish(channel, event)` (records instead of sending in tests), channel-name helpers (`t:<id>:auction`, `t:<id>:updates`, `t:<id>:presence`, `u:<userId>`), `POST /api/realtime/token` with the capability builder, and the client `<RealtimeProvider>` + `useChannel(name, handler)`.
+- [x] **Design base** (from §7 and §12): Tailwind tokens (`lime`, `amber`, `gold`, `blood`, `sand`, `muted`, backgrounds), fonts through `next/font` (stencil display + Rajdhani-style body), shadcn/ui base components (button, input, card, dialog, dropdown, tabs, table, badge, toast, sheet), `cn()`, the jetpack-soldier mascot SVG component, and the app shell (top bar, tournament-switcher placeholder, sound toggle, announcement-banner slot).
+- [x] **Test data**: `npm run db:seed -- --stage=draft|ready|auction|allocated|groups|knockout` creates **two unrelated organisers**, each with a tournament at that stage, captains with teams and soldiers, all with password `password123`. Add `/dev/login-as?username=`, which only exists when `NODE_ENV !== 'production'`.
+- [x] `GET /api/health` (database ping).
+- [x] Empty folders with a one-line `README.md` for each lane's owned paths (§13.2), and `docs/lanes/LANE-A.md`, `LANE-B.md`, `LANE-C.md` from a template (Checklist · Progress · Decisions · Integration notes · Suggested CLAUDE.md updates · Handoff).
+- [x] `npm run verify` passes. Commit `chore: foundation`, then run `git tag foundation`.
+- [x] **STOP. Phase 0 done.** The user now creates the three worktrees (§13.7).
 
 ### 13.4 Lane A: Identity, people & setup (branch `lane/a`, port 3001, Neon branch `lane-a`)
 
