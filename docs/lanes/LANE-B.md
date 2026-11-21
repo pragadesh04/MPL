@@ -10,7 +10,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B2 `initializeAuction`.** Fill in the Phase 0 stub: create `auction_state`, the random pool order and starting purses.
 - [x] **B3 Auction service.** `settleDue` (lot expiry, break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, **publishing only after commit**.
 - [x] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
-- [ ] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
+- [x] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
 - [ ] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
 - [ ] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
 - [ ] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
@@ -45,6 +45,10 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   `…/commands`, `…/tick` (body `{ liveCode? }`). Smoke-tested on the dev server with the
   `auction` seed: valid bid, duplicate commandId, ALREADY_LEADING, stale OUTBID, late TOO_LATE,
   pause/resume, cross-tenant 404, no-session 404, 422 on a bad body.
+- 2026-11-21 · B5 client state (`src/features/auction/realtime/`): pure event reducer, vanilla
+  Zustand store with smoothed clock offset, `useAuctionRealtime` (gap refetch, reconnect refetch,
+  10 s heartbeat, 2 s polling without Ably, tick nudges with retry, bid / command actions),
+  `useServerNow` / `useCountdown`, `usePresence`. 15 tests (reducer, store, hook in jsdom).
 
 ## Decisions
 
