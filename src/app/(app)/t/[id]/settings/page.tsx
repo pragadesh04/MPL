@@ -1,4 +1,4 @@
-import { ChevronRight, ShieldCheck, SlidersHorizontal, Users } from 'lucide-react';
+import { ChevronRight, ShieldCheck, SlidersHorizontal, Users, Webhook } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CancelTournamentCard } from '@/features/identity/components/cancel-tournament-card';
@@ -9,7 +9,7 @@ import { getTournamentForOrganiser } from '@/server/services/tournaments/tournam
 
 export const metadata = { title: 'Settings' };
 
-/** Tournament settings index (organisers). Integrations (webhooks) are added by Lane B. */
+/** Tournament settings index (organisers): rules, people, organisers and integrations (webhooks). */
 export default async function SettingsPage({ params }: PageProps<'/t/[id]/settings'>) {
   const { id } = await params;
   const userId = await requirePageUser(`/t/${id}/settings`);
@@ -34,6 +34,16 @@ export default async function SettingsPage({ params }: PageProps<'/t/[id]/settin
       help: 'Co-admins, auctioneers, invites and ownership',
       Icon: ShieldCheck,
     },
+    ...(can(t.roles, 'webhooks:manage')
+      ? [
+          {
+            href: `/t/${id}/settings/integrations`,
+            title: 'Integrations',
+            help: 'Discord and webhooks that share auction events outside the app',
+            Icon: Webhook,
+          },
+        ]
+      : []),
   ];
   return (
     <div className="mx-auto grid max-w-3xl gap-6">

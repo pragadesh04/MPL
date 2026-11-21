@@ -50,6 +50,8 @@ export const lotClosedDataSchema = z.object({
   reason: z.string().nullable(),
   /** End of the break; the next lot opens then. Null when the round / auction ended. */
   nextAt: isoDate.nullable(),
+  /** When the lot closed (see `lastResultSchema.closedAt`). */
+  closedAt: isoDate.optional(),
 });
 
 export const auctionPausedDataSchema = z.object({

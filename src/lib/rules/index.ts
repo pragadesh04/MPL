@@ -58,6 +58,7 @@ export {
 } from './nextValidBid';
 export {
   canTeamBid,
+  bidBlockMessage,
   customBidBounds,
   type BidBlockReason,
   type BidCheck,

@@ -1,6 +1,6 @@
 /**
  * npm run db:migrate — applies drizzle/*.sql using DATABASE_URL_UNPOOLED (direct URL), falling
- * back to DATABASE_URL, then to local PGlite (`pglite:./.pglite/dev`).
+ * back to DATABASE_URL, then to local PGlite (`pglite:../.pglite-<folder>`, outside the project).
  */
 import './load-env';
 import { mkdirSync } from 'node:fs';

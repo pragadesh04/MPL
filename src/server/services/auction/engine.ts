@@ -392,6 +392,7 @@ export async function closeLot(ctx: AuctionCtx, mode: CloseMode): Promise<LastRe
   ctx.state.currentBid = null;
   ctx.state.currentTeamId = null;
   ctx.state.endsAt = null;
+  result = { ...result, closedAt: ctx.now.toISOString() };
   ctx.state.lastResult = result;
   ctx.rosterChanged = true;
 

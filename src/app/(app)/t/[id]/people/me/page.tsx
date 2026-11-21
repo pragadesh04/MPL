@@ -4,12 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MpAmount } from '@/components/ui/mp-amount';
 import { StatusPill } from '@/components/ui/status-pill';
 import { TeamChip } from '@/components/ui/team-chip';
+import { AuctionProvider } from '@/features/auction/shared/auction-context';
+import { SoldierStatusCard } from '@/features/auction/soldier/soldier-status-card';
 import { LiveRefresh } from '@/features/identity/components/live-refresh';
 import { MyCardForm } from '@/features/identity/components/my-card';
 import { firstName } from '@/features/identity/lib/labels';
 import { orNotFound, requirePageUser } from '@/features/identity/server/page-access';
 import type { MyCard } from '@/server/services/people/teams';
 import { getMyCard } from '@/server/services/people/teams';
+import { getAuctionPageData, type AuctionPageData } from '@/server/services/auction/page-data';
+import { isAuctionStatus, isFormatStatus } from '@/lib/navigation';
 
 export const metadata = { title: 'My card' };
 
@@ -37,7 +41,8 @@ function statusLine(card: MyCard): {
 
 /**
  * Soldier portal (§7.5) — also a captain's own card. Pending people see only this card.
- * Integration (I3) adds Lane B's live auction status card and Lane C's fixtures here.
+ * While the auction runs, an approved soldier also gets Lane B's live status card; once the
+ * format starts, links go to Lane C's matches hub (filtered to my team) and stats.
  */
 export default async function MyCardPage({ params }: PageProps<'/t/[id]/people/me'>) {
   const { id } = await params;
@@ -46,6 +51,12 @@ export default async function MyCardPage({ params }: PageProps<'/t/[id]/people/m
   const status = statusLine(card);
   const editable =
     !card.rejected && (card.tournament.status === 'DRAFT' || card.tournament.status === 'READY');
+  const soldier = card.kind === 'PLAYER' && !card.pending && !card.rejected;
+  const auction: AuctionPageData | null =
+    soldier && isAuctionStatus(card.tournament.status)
+      ? await getAuctionPageData(userId, id).catch(() => null)
+      : null;
+  const formatOn = !card.pending && !card.rejected && isFormatStatus(card.tournament.status);
 
   return (
     <div className="mx-auto grid max-w-3xl gap-6">
@@ -96,6 +107,39 @@ export default async function MyCardPage({ params }: PageProps<'/t/[id]/people/m
           ) : null}
         </CardContent>
       </Card>
+      {auction?.viewer.playerId ? (
+        <AuctionProvider
+          info={{
+            tournamentId: auction.tournament.id,
+            tournamentName: auction.tournament.name,
+            settings: auction.settings,
+            organiserNames: Object.fromEntries(auction.organisers.map((o) => [o.userId, o.name])),
+            captainUserIds: auction.captainUserIds,
+          }}
+          initialSnapshot={auction.snapshot}
+        >
+          <SoldierStatusCard playerId={auction.viewer.playerId} />
+        </AuctionProvider>
+      ) : null}
+      {formatOn ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your matches</CardTitle>
+            <CardDescription>The running order, your group and the knockout path.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link href={`/t/${id}/matches`}>Match order</Link>
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link href={`/t/${id}/groups`}>Groups</Link>
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link href={`/t/${id}/stats`}>Stats</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>Check your card</CardTitle>

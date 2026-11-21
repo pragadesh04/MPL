@@ -13,7 +13,6 @@ import { TeamSlot } from '@/features/format/components/team-slot';
 import { TreeView } from '@/features/format/components/tree-view';
 import type { FormatPageData, HomeCounts, MatchView } from '@/features/format/types';
 import { cn } from '@/lib/utils';
-import { ServiceWorkerRegister } from './service-worker';
 import { StatusPills } from './tournament-hero';
 
 type ViewId = 'draw' | 'standings' | 'bracket' | 'matches' | 'champion';
@@ -72,7 +71,6 @@ function Screen({ counts }: { counts: HomeCounts }) {
   return (
     <div className="flex min-h-dvh flex-col gap-6 p-8">
       <LiveRefresh tournamentId={data.tournament.id} />
-      <ServiceWorkerRegister />
       <AnnouncementBanner
         text={data.tournament.announcement}
         className="rounded-md border text-xl"

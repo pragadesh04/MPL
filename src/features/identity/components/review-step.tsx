@@ -1,5 +1,6 @@
 import { CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ReadyToStartResult } from '@/lib/rules/validateReadyToStart';
 import type { RosterCounts, TournamentDetail } from '@/server/services/tournaments/tournaments';
@@ -80,6 +81,11 @@ export function ReviewStep({
             tournamentName={tournament.name}
             ready={readiness.ok}
           />
+        ) : null}
+        {!setup && tournament.status !== 'CANCELLED' ? (
+          <Button asChild size="xl">
+            <Link href={`/t/${tournament.id}/auction`}>Go to the auction</Link>
+          </Button>
         ) : null}
       </aside>
     </div>

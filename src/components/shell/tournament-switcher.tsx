@@ -2,6 +2,7 @@
 
 import { ChevronsUpDown } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,9 +35,11 @@ export interface TournamentSwitcherProps {
   currentId?: string;
 }
 
-/** Placeholder switcher: renders whatever list it is given; Lane A wires the data (A2). */
+/** Tournament switcher (§7 app shell). The current tournament is taken from `/t/<id>/…` if not given. */
 export function TournamentSwitcher({ tournaments, currentId }: TournamentSwitcherProps) {
-  const current = tournaments.find((t) => t.id === currentId);
+  const pathname = usePathname();
+  const fromPath = /^\/t\/([^/]+)/.exec(pathname)?.[1];
+  const current = tournaments.find((t) => t.id === (currentId ?? fromPath));
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

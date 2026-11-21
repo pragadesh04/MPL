@@ -43,7 +43,9 @@ export function BigScreenAuction() {
 
   // ── SOLD / UNSOLD stamp: shown when lastResult changes (not for the result already there) ─
   const r = snapshot.lastResult;
-  const resultKey = r ? `${r.playerId}:${r.result}:${r.teamId ?? ''}:${r.price ?? ''}` : null;
+  const resultKey = r
+    ? `${r.playerId}:${r.result}:${r.teamId ?? ''}:${r.price ?? ''}:${r.closedAt ?? ''}`
+    : null;
   const [seenKey, setSeenKey] = useState(resultKey);
   const [stamp, setStamp] = useState<Stamp | null>(null);
   if (resultKey !== seenKey) {

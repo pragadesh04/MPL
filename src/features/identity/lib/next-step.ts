@@ -37,6 +37,12 @@ export function nextStepFor(t: MyTournament): NextStep {
   if (t.roles.includes('SOLDIER') && setup) {
     return { text: 'You’re in! Waiting for the auction', href: `/t/${t.id}/people/me` };
   }
+  if (organiser && t.status === 'ALLOCATION') {
+    return { text: 'Allocate the leftover soldiers', href: `/t/${t.id}/allocation` };
+  }
+  if (organiser && t.status === 'GROUP_DRAW') {
+    return { text: 'Run the group draw', href: `/t/${t.id}/groups` };
+  }
   switch (t.status) {
     case 'AUCTION_LIVE':
     case 'AUCTION_PAUSED':
@@ -44,7 +50,7 @@ export function nextStepFor(t: MyTournament): NextStep {
     case 'ALLOCATION':
       return { text: 'Leftover soldiers are being allocated', href: `/t/${t.id}` };
     case 'GROUP_DRAW':
-      return { text: 'Group draw coming up', href: `/t/${t.id}` };
+      return { text: 'Group draw coming up', href: `/t/${t.id}/groups` };
     case 'GROUP_STAGE':
     case 'KNOCKOUT':
       return { text: 'Check the match order', href: `/t/${t.id}/matches` };

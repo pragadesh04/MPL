@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 
 /**
  * Registers the offline-shell service worker (`public/sw.js`, PLAN §7.13) in production builds
- * only, so it never interferes with dev hot reload. Renders nothing. Phase 2 can move this into
- * the root layout so every page registers it.
+ * only, so it never interferes with dev hot reload. Renders nothing. Mounted once in the root
+ * layout, so every page registers it.
  */
 export function ServiceWorkerRegister() {
   useEffect(() => {

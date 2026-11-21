@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Oxanium, Rajdhani, Saira_Stencil } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
+import { ServiceWorkerRegister } from '@/features/public/components/service-worker';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <body className="flex min-h-full flex-col font-sans text-base antialiased">
         {children}
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

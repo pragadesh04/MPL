@@ -2,22 +2,19 @@ import { AnnouncementBanner } from '@/components/shell/announcement-banner';
 import { StatusPill } from '@/components/ui/status-pill';
 import type { TournamentStatus } from '@/lib/schemas/enums';
 import { TOURNAMENT_STATUS_PILL } from '../status';
-import { ServiceWorkerRegister } from '@/features/public/components/service-worker';
 import { LiveRefresh } from './live-refresh';
-import { TournamentNav } from './tournament-nav';
 
 /**
- * Header for every Lane C tournament page: announcement banner, name, status pill and the format
- * navigation, plus live refresh on `t:<id>:updates`. Phase 2 (I3) may lift this into a shared
- * `t/[id]/layout.tsx` with role-based navigation for every lane's pages.
+ * Header for the format / public tournament pages: announcement banner, name and status pill, plus
+ * live refresh on `t:<id>:updates`. Navigation comes from the shared `t/[id]/layout.tsx`.
  */
 export function TournamentHeader({
   tournament,
-  isOrganiser,
   title,
 }: {
   tournament: { id: string; name: string; status: TournamentStatus; announcement: string | null };
-  isOrganiser: boolean;
+  /** Kept for callers; navigation (which depends on the role) now lives in the shared layout. */
+  isOrganiser?: boolean;
   /** Page title under the tournament name, e.g. "Matches". */
   title?: string;
 }) {
@@ -25,7 +22,6 @@ export function TournamentHeader({
   return (
     <div className="mb-6 space-y-4">
       <LiveRefresh tournamentId={tournament.id} />
-      <ServiceWorkerRegister />
       <AnnouncementBanner
         text={tournament.announcement}
         className="-mx-4 -mt-6 sm:mx-0 sm:mt-0 sm:rounded-md sm:border"
@@ -43,7 +39,6 @@ export function TournamentHeader({
           {pill.label}
         </StatusPill>
       </div>
-      <TournamentNav tournamentId={tournament.id} isOrganiser={isOrganiser} />
     </div>
   );
 }

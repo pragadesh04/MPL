@@ -109,6 +109,11 @@ export const lastResultSchema = z.object({
   teamId: idSchema.nullable(),
   price: mp.nullable(),
   reason: z.string().nullable(),
+  /**
+   * When the lot closed (DB clock). Makes every close distinct, so the big screen stamps the same
+   * soldier going UNSOLD twice in a row (re-auction). Optional for rows written before it existed.
+   */
+  closedAt: isoDate.optional(),
 });
 export type LastResult = z.infer<typeof lastResultSchema>;
 

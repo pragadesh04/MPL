@@ -38,7 +38,7 @@ export function StartTournamentButton({
         onConfirm={async (confirmName) => {
           await api(`/api/tournaments/${tournamentId}/start`, { body: { confirmName } });
           toast.success('Tournament started — the auction is on!');
-          router.refresh();
+          router.push(`/t/${tournamentId}/auction`);
         }}
       />
     </>

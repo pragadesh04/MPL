@@ -37,14 +37,16 @@ export function notificationText(item: Pick<Item, 'type' | 'data'>): string {
       return `The organiser moved you to ${role}s in ${str(d.tournamentName)}`;
     case 'team.reminder':
       return `Reminder: finish your team setup for ${str(d.tournamentName)}`;
+    case 'webhook.auto_disabled':
+      return `A ${d.kind === 'DISCORD' ? 'Discord' : 'webhook'} integration (${str(d.maskedUrl)}) was switched off after ${String(d.consecutiveFailures ?? 20)} failed deliveries`;
     default:
       return 'New notification';
   }
 }
 
 /**
- * Bell with an unread badge (§7.1). Live: `notification.new` on `u:<userId>` refetches the list.
- * Integration can move it into the shared top bar.
+ * Bell with an unread badge (§7.1), shown in the shared top bar on every logged-in page.
+ * Live: `notification.new` on `u:<userId>` refetches the list.
  */
 export function NotificationBell({
   userId,

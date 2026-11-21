@@ -1,6 +1,7 @@
 'use client';
 
 import { LogOut, UserRound } from 'lucide-react';
+import Link from 'next/link';
 import { InitialsAvatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,7 @@ export interface UserMenuProps {
   username: string;
 }
 
-/** User menu (§7 App shell). Profile / change password pages and the logout API are Lane A. */
+/** User menu (§7 app shell): profile + change password (`/dashboard/account`) and log out. */
 export function UserMenu({ displayName, username }: UserMenuProps) {
   return (
     <DropdownMenu>
@@ -32,8 +33,10 @@ export function UserMenu({ displayName, username }: UserMenuProps) {
           <span className="block truncate text-xs font-normal text-muted">@{username}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <UserRound aria-hidden className="size-4" /> Profile
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account" className="flex w-full items-center gap-2">
+            <UserRound aria-hidden className="size-4" /> Profile &amp; password
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <form action="/api/auth/logout" method="post" className="w-full">

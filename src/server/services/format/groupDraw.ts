@@ -31,6 +31,7 @@ import { writeAudit } from '../audit';
 import { lockTournament } from '../roster';
 import { requireRole } from '../roles';
 import { queueUpdates } from './events';
+import { groupsDrawnEvent, loadTeamCards, queueFormatWebhooks } from './webhooks';
 
 /** Uniform [0, 1) from the OS CSPRNG, so nobody can predict or replay a draw. */
 export const cryptoRandom = (): number => randomInt(0, 2 ** 32) / 2 ** 32;
@@ -277,6 +278,19 @@ export async function performGroupDraw(
     { type: 'groups.updated', data: {} },
     { type: 'tournament.status', data: { status: nextStatus } },
   ]);
+  if (onCommit && drafts.length > 0) {
+    const cards = await loadTeamCards(
+      tx,
+      drafts.flatMap((d) => d.teams.map((t) => t.teamId)),
+    );
+    queueFormatWebhooks(onCommit, tournamentId, [
+      groupsDrawnEvent(
+        drafts.map((d) => ({ name: d.name, teamIds: d.teams.map((t) => t.teamId) })),
+        cards,
+        rows.filter((r) => !r.isBye).length,
+      ),
+    ]);
+  }
   return { status: nextStatus, groupCount: drafts.length, matchCount: rows.length };
 }
 

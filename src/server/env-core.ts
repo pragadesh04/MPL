@@ -2,10 +2,16 @@
  * Env parsing without `server-only`, so scripts (seed, migrate, operator tools) can use it.
  * App code imports `env()` from `./env` instead.
  */
+import { basename } from 'node:path';
 import { z } from 'zod';
 
-/** Dev / test fallback when no Postgres URL is configured: a local PGlite directory. */
-export const DEFAULT_PGLITE_URL = 'pglite:./.pglite/dev';
+/**
+ * Dev / test fallback when no Postgres URL is configured: a local PGlite directory **outside the
+ * project** (`../.pglite-<folder>`). Inside the project, `next dev`'s file watcher saw the database
+ * files change and Turbopack kept restarting (Lane C, Phase 2). The folder name keeps worktrees
+ * (mpl, mpl-lane-a, …) on separate databases.
+ */
+export const DEFAULT_PGLITE_URL = `pglite:../.pglite-${basename(process.cwd())}`;
 
 const secret = (name: string) =>
   z

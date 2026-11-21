@@ -21,6 +21,13 @@ import { writeAudit } from '../audit';
 import { cryptoRandom } from '../format/groupDraw';
 import { queueUpdates, type FormatEvent } from '../format/events';
 import {
+  loadTeamCards,
+  matchResultEvent,
+  queueFormatWebhooks,
+  tournamentCompletedEvent,
+} from '../format/webhooks';
+import type { OutgoingEvent } from '../webhooks/dispatch';
+import {
   loadGroupStandings,
   needsTiebreakDraw,
   TIEBREAK_AUDIT_ACTION,
@@ -47,6 +54,8 @@ interface Ctx {
   userId: string;
   events: FormatEvent[];
   changedMatchIds: Set<string>;
+  /** Outgoing webhooks (match.result, tournament.completed), queued after COMMIT. */
+  webhooks: OutgoingEvent[];
 }
 
 /** Run `fn` with the tournament locked; queue the collected events after it. */
@@ -57,7 +66,15 @@ async function inTournament<T>(
 ): Promise<T> {
   return withTransaction(async (tx, onCommit) => {
     const tournament = await lockTournament(tx, tournamentId);
-    const ctx: Ctx = { tx, onCommit, tournament, userId, events: [], changedMatchIds: new Set() };
+    const ctx: Ctx = {
+      tx,
+      onCommit,
+      tournament,
+      userId,
+      events: [],
+      changedMatchIds: new Set(),
+      webhooks: [],
+    };
     const result = await fn(ctx);
     const events: FormatEvent[] = [];
     if (ctx.changedMatchIds.size > 0) {
@@ -65,6 +82,7 @@ async function inTournament<T>(
     }
     events.push(...ctx.events);
     if (events.length > 0) await queueUpdates(tx, onCommit, tournamentId, events);
+    queueFormatWebhooks(onCommit, tournamentId, ctx.webhooks);
     return result;
   });
 }
@@ -414,6 +432,20 @@ async function recordResult(
     before: { status: m.status, winnerTeamId: m.winnerTeamId },
     after: { match: m.matchNumber, status, winnerTeamId: winner, score: `${winsA}-${winsB}` },
   });
+  const cards = winner ? await loadTeamCards(ctx.tx, [a, b]) : null;
+  if (winner && cards) {
+    ctx.webhooks.push(
+      matchResultEvent({
+        matchNumber: m.matchNumber,
+        stage: m.stage,
+        teamA: cards.get(a),
+        teamB: cards.get(b),
+        winsA,
+        winsB,
+        winner: cards.get(winner),
+      }),
+    );
+  }
 
   if (m.stage === 'GROUP') {
     // A group result changed after the knockout was filled (nothing played there yet): refill it,
@@ -432,8 +464,11 @@ async function recordResult(
 
   // The final decides the champion; un-deciding it reopens the tournament.
   if (m.stage === 'KNOCKOUT' && !m.nextMatchId) {
-    if (winner) await setStatus(ctx, 'COMPLETED');
-    else if (ctx.tournament.status === 'COMPLETED') await setStatus(ctx, 'KNOCKOUT');
+    if (winner) {
+      const wasCompleted = ctx.tournament.status === 'COMPLETED';
+      await setStatus(ctx, 'COMPLETED');
+      if (!wasCompleted) ctx.webhooks.push(tournamentCompletedEvent(cards?.get(winner)));
+    } else if (ctx.tournament.status === 'COMPLETED') await setStatus(ctx, 'KNOCKOUT');
   }
 }
 

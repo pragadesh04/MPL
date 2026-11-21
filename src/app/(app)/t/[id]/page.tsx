@@ -64,10 +64,11 @@ export default async function TournamentHomePage({ params }: PageProps<'/t/[id]'
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface/60 p-4 text-sm">
             <MonitorPlay className="size-5 text-lime" aria-hidden />
             <span className="flex-1 text-muted">
-              Big screen for the projector (no login): groups, bracket and champion.
+              Big screen for the projector (no login): the auction, then groups, bracket and
+              champion.
             </span>
             <Button asChild variant="outline" size="sm">
-              <Link href={`/live/${data.tournament.liveCode}/format`} target="_blank">
+              <Link href={`/live/${data.tournament.liveCode}`} target="_blank">
                 Open big screen
               </Link>
             </Button>
