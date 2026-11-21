@@ -13,7 +13,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
 - [x] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
 - [x] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
-- [ ] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
+- [x] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
 - [ ] **B9 Tests.** Unit + service tests (PGlite). **Concurrency test on real Postgres** (20 simultaneous bids: one winner per version, purse never negative, no double sale). Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers.
 - [ ] **STOP: Lane B.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
@@ -62,6 +62,11 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   confirm with logged overrides inside the auction pipeline: one `allocation.step` event per soldier,
   `allocation.completed` webhook, status → `GROUP_DRAW`), `GET/POST …/auction/allocation`,
   `/t/[id]/allocation` with the animated reveal and per-pick override. 7 service + 4 component tests.
+
+- 2026-11-21 · B8 webhooks: `src/server/services/webhooks/` (service, SSRF guard, HMAC signing,
+  Discord formatter, delivery with `after()` and retries, auto-disable, redeliver, test event),
+  5 Route Handlers under `/api/tournaments/[id]/webhooks`, Settings → Integrations page
+  `/t/[id]/settings/integrations`. 98 tests.
 
 ## Decisions
 
@@ -126,6 +131,23 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   (`SQUAD_FULL`) or stay below `minPlayersPerTeam` (`BELOW_MINIMUM`, enforced at the end of
   allocation per §3.1); overrides need a reason and are stored as `ADMIN_PICK`. Preview is any
   organiser; confirm is owner / co-admin (`stage:advance`).
+- **Webhook delivery:** `queueWebhookEvents` (from `onCommit`) → `after(() => deliverEvents(...))`
+  (falls back to a detached promise outside a request). One `webhook_deliveries` row per webhook ×
+  event; up to 3 attempts (0 s, 1 s, 3 s), 5 s timeout, redirects not followed; 5xx / 408 / 429 /
+  network errors retry, other 4xx / 3xx / SSRF blocks fail at once. 20 failures in a row →
+  `enabled = false`, audit `webhook.auto_disabled`, and a `notifications` row + inbox event for
+  every owner / co-admin. In tests events are only recorded.
+- **SSRF:** https, port 443, no credentials; every resolved address must be public (private,
+  loopback, link-local / metadata, CGNAT, ULA, multicast, NAT64 / IPv4-mapped are blocked),
+  checked at create time and before every attempt; the transport pins the connection to an address
+  that passed the check (no DNS-rebinding window). Discord URLs must be `discord.com` /
+  `discordapp.com` webhook paths.
+- **Signing:** `X-MPL-Signature: sha256=HMAC(secret, timestamp + "." + body)`, plus `X-MPL-Event`,
+  `X-MPL-Delivery`, `X-MPL-Timestamp`. `verifySignature` is constant-time with a 300 s replay
+  window. The body `id` is stable across redeliveries so receivers can dedupe.
+- URLs and secrets are AES-256-GCM encrypted at rest; lists only show a masked URL; the GENERIC
+  secret is shown once at create. Test / redeliver send once, inside the request, and also work on
+  disabled webhooks (a failed manual send doesn't count towards auto-disable).
 - Snapshot reads and ticks first do an unlocked "is anything due?" check, and only then take the
   lock, so heartbeats don't queue on the row lock.
 
@@ -163,6 +185,15 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
    soldier portal (§7.5).
 10. **Command post announcement field (§7.6a)** isn't built: the announcement service is Lane C's.
     Add Lane C's Post / Clear control to the command post at integration.
+
+11. **Notifications type `webhook.auto_disabled`:** data `{ tournamentId, webhookId, kind, maskedUrl, consecutiveFailures }`.
+    Lane A's notification UI should render it.
+12. **Settings nav:** add an "Integrations" link to `/t/[id]/settings/integrations` in Lane A's settings
+    navigation (the page is Lane B's single file in that folder).
+13. **Other lanes' webhook events:** `groups.drawn`, `match.result`, `tournament.completed` get a
+    generic Discord embed. Lanes A / C should call `queueWebhookEvents` from `onCommit` with
+    display-ready `data` (include `teamName`, `teamShortName`, `teamColor` for team-coloured embeds).
+14. **Optional:** a cleanup job for old `webhook_deliveries` rows.
 
 ## Suggested CLAUDE.md updates
 

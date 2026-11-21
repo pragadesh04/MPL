@@ -1,6 +1,7 @@
 import 'server-only';
 import type { WebhookEvent } from '@/lib/schemas/realtime';
 import { logger } from '../../logger';
+import { scheduleWebhookDelivery } from './deliver';
 
 /**
  * Seam between the services that produce events (auction, allocation) and outgoing webhook
@@ -35,7 +36,11 @@ export function clearQueuedWebhookEvents(): void {
   (g.__mplQueuedWebhooks ??= []).length = 0;
 }
 
-/** The delivery module registers itself here (see ./deliver.ts). Tests may swap it. */
+/**
+ * Override where queued events go (tests). With no sink set, events go to real delivery
+ * (`scheduleWebhookDelivery`: `after()` + retries, see ./deliver.ts), except under
+ * NODE_ENV=test, where they are only recorded so service tests never touch the network.
+ */
 export function setWebhookSink(sink: WebhookSink | null): void {
   g.__mplWebhookSink = sink ?? undefined;
 }
@@ -43,11 +48,13 @@ export function setWebhookSink(sink: WebhookSink | null): void {
 /** Hand committed events to webhook delivery. Never throws. Call from `onCommit` only. */
 export function queueWebhookEvents(tournamentId: string, events: OutgoingEvent[]): void {
   if (events.length === 0) return;
+  const isTest = process.env.NODE_ENV === 'test';
   // Recorded only in tests, so a long-running server doesn't keep every event in memory.
-  if (process.env.NODE_ENV === 'test')
-    (g.__mplQueuedWebhooks ??= []).push({ tournamentId, events });
+  if (isTest) (g.__mplQueuedWebhooks ??= []).push({ tournamentId, events });
+  const sink: WebhookSink | undefined =
+    g.__mplWebhookSink ?? (isTest ? undefined : scheduleWebhookDelivery);
   try {
-    g.__mplWebhookSink?.(tournamentId, events);
+    sink?.(tournamentId, events);
   } catch (err) {
     logger.error({ err, tournamentId }, 'queueWebhookEvents: sink failed');
   }
