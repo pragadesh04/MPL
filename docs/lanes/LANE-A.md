@@ -15,7 +15,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 - [x] **A7 Captain team setup and Teams tracker.** Name + short code, colour picker (taken colours greyed live, contrast, too-similar warning), logo / emoji, motto, live card preview, onboarding board with "Send reminder".
 - [x] **A8 Password resets.** Organiser-issued one-time links; the `user:reset-password` operator script (stub in `scripts/user-reset-password.ts`).
 - [x] **A9 Review & Start.** `validateReadyToStart`, checklist UI with "Fix" links, the Start transaction (lock settings, close registration, expire pending requests, set status, **call `initializeAuction`**).
-- [ ] **A10 Tests.** Unit + service tests, a **tenant-isolation test for every Lane A service**, e2e `e2e/identity/**`.
+- [x] **A10 Tests.** Unit + service tests, a **tenant-isolation test for every Lane A service**, e2e `e2e/identity/**`.
 - [ ] **STOP: Lane A.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
 ## Phase 0 pieces to build on
