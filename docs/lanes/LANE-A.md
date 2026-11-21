@@ -7,7 +7,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 ## Checklist
 
 - [x] **A1 Accounts.** Player sign-up `/register` (optional organiser key, live tournament preview, Captain/Soldier toggle). Organiser sign-up `/register/organiser`. Login / logout. Username availability. Player IDs and organiser keys (`formatKey`). Change password.
-- [ ] **A2 Tournaments.** Create (one active per organiser → 409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
+- [x] **A2 Tournaments.** Create (one active per organiser → 409). Settings form (Rules step). "Copy settings from…". Cancel. Organiser and player dashboards. Tournament switcher.
 - [ ] **A3 Organiser team.** Memberships, organiser invite links (create, accept, revoke), change role / remove, transfer ownership, Settings → Organisers.
 - [ ] **A4 Path A: personal links.** "Add person" drawer. Token encryption / decryption, `/i/[token]`, regenerate, unlink, status chips, Share menu (Copy · WhatsApp · QR) on captain and soldier rows, CSV import.
 - [ ] **A5 Path B: organiser key.** Join with a key at sign-up and from the dashboard. Pending rows. Approve (purse / base price, bulk), reject, switch role. Registration open/closed + max registrations. Key card (QR, WhatsApp text), regenerate.
@@ -42,6 +42,19 @@ _Append dated entries as tasks land._
   `api/me/{password,profile,organiser-key/regenerate}`, `api/organiser-keys/[key][/join]`. Pages:
   `/login`, `/register` (live key preview + Captain/Soldier toggle, `?key=`), `/register/organiser`
   (strength meter), `/dashboard/account`. Lane A input schemas: `src/features/identity/schemas.ts`.
+- 2026-11-21 **A2** — `services/tournaments`: create (organisers only; one active per owner via the
+  partial index → 409; live-code retry), "Copy settings from…" (only tournaments I organise),
+  basics, settings (full edit before Start; after Start only `EDITABLE_AFTER_START` freely, other
+  keys need `admin:override` + reason → `settings.override` audit), registration open/closed + cap,
+  cancel (owner, type the name, expires pending requests), `listMyTournaments` (roles, pending,
+  rejected, my team), organiser dashboard data, `getSetupOverview`. DRAFT ⇄ READY is kept in step
+  by `syncReadyStatus` after every roster change (`people/roster-events.ts`). Routes:
+  `api/tournaments`, `api/tournaments/[id]` (GET/PATCH), `…/settings`, `…/registration`, `…/cancel`,
+  `api/me/tournaments`. Pages: `/dashboard` (command post, organiser key card, new tournament with
+  copy, organising for others, archive; Player ID card, join with a key, my tournaments with the
+  next step), `/t/[id]/setup?step=basics|rules|review` with the 5-step progress rail, Rules form
+  with autosave, increments editor (flat / bands) and live preview (falls back while Lane C's
+  `planFormat` throws).
 
 ## Decisions
 
