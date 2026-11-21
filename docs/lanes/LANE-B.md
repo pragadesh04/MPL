@@ -8,7 +8,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 
 - [x] **B1 Rules.** `nextValidBid` (flat raise and price bands), `canTeamBid` (returns the reason), custom-bid bounds, timer and break math, `allocateLeftovers`, `unsoldPolicy` handling. **100% branch coverage.**
 - [x] **B2 `initializeAuction`.** Fill in the Phase 0 stub: create `auction_state`, the random pool order and starting purses.
-- [ ] **B3 Auction service.** `settleDue` (lot expiry, break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, **publishing only after commit**.
+- [x] **B3 Auction service.** `settleDue` (lot expiry, break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, **publishing only after commit**.
 - [ ] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
 - [ ] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
 - [ ] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
@@ -35,6 +35,12 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   `canTeamBid`, `customBidBounds`, timers, `reauctionPrice`, `allocateLeftovers`,
   `resolveUnsoldLot`, `afterRoundEnds`. 73 tests, 100% statements/branches/functions/lines on all
   six modules.
+- 2026-11-21 · B2 `initializeAuction`: purses reset to `purse_total`, pool numbered 1…n by
+  `playerOrder` (CSPRNG shuffle), round-1 `auction_state`, audit. Idempotent.
+- 2026-11-21 · B3 auction service (`src/server/services/auction/`): `engine.ts` (lock context,
+  open / close lot, round end, `settleDue`, persist + publish), `run.ts` (the write pipeline),
+  `bids.ts`, `commands.ts` (all 12 commands), `control.ts`, `snapshot.ts` (snapshot, tick,
+  live-code access), `pool.ts`. 42 PGlite service tests.
 
 ## Decisions
 
@@ -49,6 +55,39 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   rounds 2 … 1 + `unsoldReauctionRounds` then `ALLOCATE`; `RANDOM_SQUAD` / `ADMIN_DECIDES` →
   `WAIT_FOR_ADMIN` (organiser uses Auction again / Assign).
 - `RANDOM_SQUAD` picks among teams with space **in team order**, indexed by `random()`.
+- **Write pipeline** (`run.ts`): lock `auction_state` → `settleDue` → SAVEPOINT { claim
+  `commandId` in `processed_commands` → command } → persist → COMMIT → publish. A command that
+  fails with an `AppError` rolls back to the savepoint but the settle steps still commit and
+  publish (a late bid closes the lot, then gets `TOO_LATE`).
+- **The auction starts idle.** `initializeAuction` opens nothing; the controlling organiser's
+  first `next` ("Start auction") opens soldier 1. Captains see the lobby until then.
+- **Controller lock:** the first organiser to send a console command while nobody holds control
+  takes it automatically (logged `auction.control_taken`, `control.changed`). Others get
+  `RULE_VIOLATION / NOT_CONTROLLER` until they send `take-control`.
+- **Version checks:** console commands (`next`, `sold`, `unsold`, `pause`, `resume`, `undo`,
+  `start-round`) and bids must match `expectedVersion` (bids → 409 `OUTBID`, commands → 409
+  `CONFLICT / STALE_VERSION`). Roster commands (`release`, `auction-again`, `assign`),
+  `take-control` and `reset` act on fresh rows and skip the check.
+- **`auction_state.version` counts auction events only.** Release / undo / assign / auction again
+  don't bump it; they publish `people.updated` on `t:<id>:updates` (roster version), and the
+  client refetches the snapshot.
+- **After a close, the next steps are timed from `now`**, not the old deadline, so an auction
+  nobody watched resumes with a fresh break instead of racing through every lot unbid.
+- **Close-time recheck:** if the leading team became full or short of points during the lot (an
+  Assign), the lot closes UNSOLD with reason `BIDDER_INELIGIBLE`.
+- **Mark unsold** puts the soldier on the unsold list (reason `CLOSED_BY_ORGANISER`) even if
+  there were bids, and never applies `RANDOM_SQUAD`.
+- **Undo** = the latest `auction.sold` audit entry whose soldier is still SOLD to that team at
+  that price; the soldier goes to the **front** of the pool. **Release** sends to the back.
+- **Sold / Mark unsold / Next need the auction live** (resume first). Roster commands work while
+  paused too.
+- **Round 2+ prices**: every lot opened in round > 1 uses `reauctionPrice`, including after
+  "Start new round".
+- **Assign** accepts UNSOLD or POOL soldiers; when nothing is running and the pool and the unsold
+  list are both empty, the auction completes (→ `ALLOCATION`).
+- **Pause** stores the lot's (or the break's) remaining ms; resume restores it from `now`.
+- Snapshot reads and ticks first do an unlocked "is anything due?" check, and only then take the
+  lock, so heartbeats don't queue on the row lock.
 
 ## Integration notes
 
@@ -57,6 +96,16 @@ _Shared-file changes this lane needs (schema columns, dependencies, contract fie
 1. **`src/lib/rules/index.ts`:** also export `bidBlockMessage` from `./canTeamBid` (the
    human text for each `BidBlockReason`, used by the phone, console and API errors). Meanwhile
    Lane B imports it from `@/lib/rules/canTeamBid` directly.
+2. **Snapshot contract (`src/lib/schemas/auction.ts`):** `current` has no player details (name,
+   IGN, photo). Workaround: the soldier on the block is listed **first in `pool` with status
+   `ON_BLOCK`**. Suggested change: add `current.player: snapshotPlayerSchema` and keep `pool` to
+   POOL soldiers only.
+3. **Realtime contract (`src/lib/schemas/realtime.ts`):** there is no event for "auction reset".
+   Workaround: reset emits `control.changed` (which makes every client refetch) plus
+   `tournament.status`. Suggested: add `auction.reset` to `AUCTION_EVENT_TYPES`.
+4. **Lane A Start (A9):** set the status to `AUCTION_LIVE` **before** calling
+   `initializeAuction(tx, id)`. Lane B's engine treats `AUCTION_LIVE` with nothing on the block as
+   the pre-auction lobby.
 
 ## Suggested CLAUDE.md updates
 
