@@ -12,7 +12,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
 - [x] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
 - [x] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
-- [ ] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
+- [x] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
 - [ ] **B8 Webhooks.** Settings → Integrations UI, encrypted URL + secret, HMAC signing, Discord embeds, SSRF guard, delivery with `after()` and retries, delivery log, redeliver, test event, auto-disable.
 - [ ] **B9 Tests.** Unit + service tests (PGlite). **Concurrency test on real Postgres** (20 simultaneous bids: one winner per version, purse never negative, no double sale). Tenant-isolation tests. E2E `e2e/auction/**` with two captain browsers.
 - [ ] **STOP: Lane B.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
@@ -57,6 +57,11 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   `page-data.ts` (first-render data, command-post roster) and `live-settings.ts` (Rules card
   after Start). 70 component tests + 4 service tests. Checked in a real browser (Playwright
   screenshots of all five screens, no console errors after fixing a countdown hydration mismatch).
+
+- 2026-11-21 · B7 allocation: `src/server/services/allocation/allocation.ts` (preview with reasons,
+  confirm with logged overrides inside the auction pipeline: one `allocation.step` event per soldier,
+  `allocation.completed` webhook, status → `GROUP_DRAW`), `GET/POST …/auction/allocation`,
+  `/t/[id]/allocation` with the animated reveal and per-pick override. 7 service + 4 component tests.
 
 ## Decisions
 
@@ -116,6 +121,11 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   250 ms.
 - `teamBidState` returns the rule's reason `code` as well as the captain-facing text; the console
   tiles reword by code ("Squad full", "Leading", "Can't afford n MP").
+- **Allocation** shares the auction lock and event sequence (`runAuctionWrite`). Leftovers are UNSOLD
+  (and any POOL) soldiers. Confirm is refused if anyone is unplaced, a squad would exceed the max
+  (`SQUAD_FULL`) or stay below `minPlayersPerTeam` (`BELOW_MINIMUM`, enforced at the end of
+  allocation per §3.1); overrides need a reason and are stored as `ADMIN_PICK`. Preview is any
+  organiser; confirm is owner / co-admin (`stage:advance`).
 - Snapshot reads and ticks first do an unlocked "is anything due?" check, and only then take the
   lock, so heartbeats don't queue on the row lock.
 
