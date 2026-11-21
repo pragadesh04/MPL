@@ -13,7 +13,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 - [x] **A5 Path B: organiser key.** Join with a key at sign-up and from the dashboard. Pending rows. Approve (purse / base price, bulk), reject, switch role. Registration open/closed + max registrations. Key card (QR, WhatsApp text), regenerate.
 - [x] **A6 Path C: Player ID requests.** Public-card lookup, send / cancel, requests inbox, accept / decline / block, expiry, rate limits, `notifications`, live `u:<userId>` events with the bell badge.
 - [x] **A7 Captain team setup and Teams tracker.** Name + short code, colour picker (taken colours greyed live, contrast, too-similar warning), logo / emoji, motto, live card preview, onboarding board with "Send reminder".
-- [ ] **A8 Password resets.** Organiser-issued one-time links; the `user:reset-password` operator script (stub in `scripts/user-reset-password.ts`).
+- [x] **A8 Password resets.** Organiser-issued one-time links; the `user:reset-password` operator script (stub in `scripts/user-reset-password.ts`).
 - [ ] **A9 Review & Start.** `validateReadyToStart`, checklist UI with "Fix" links, the Start transaction (lock settings, close registration, expire pending requests, set status, **call `initializeAuction`**).
 - [ ] **A10 Tests.** Unit + service tests, a **tenant-isolation test for every Lane A service**, e2e `e2e/identity/**`.
 - [ ] **STOP: Lane A.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
@@ -95,6 +95,13 @@ _Append dated entries as tasks land._
   short code, custom hex with contrast + too-similar warnings, emoji / logo / motto, live team card
   and big-screen banner previews; pending captains see "Waiting for … to approve you"),
   `/t/[id]/people/me` (soldier portal / my card).
+- 2026-11-21 **A8** — `services/passwords`: organiser-issued one-time reset links (30 min, hashed,
+  audited) only for captains / soldiers of that tournament, never for organiser accounts (so a
+  co-admin can't take over an owner who also plays); preview and single-use consume (also kills
+  older outstanding links). `reset-core.ts` has no `server-only` so the operator script can use
+  it; `npm run user:reset-password -- <username>` now prints a link. Routes:
+  `api/tournaments/[id]/participants/[userId]/reset-password`, `api/password-resets/[token]`.
+  Page `/reset/[token]`; key-icon button on People rows with a linked account.
 
 ## Decisions
 
