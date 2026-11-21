@@ -14,7 +14,7 @@ Owned paths: PLAN §13.2 (Lane A column). Never edit shared files; write integra
 - [x] **A6 Path C: Player ID requests.** Public-card lookup, send / cancel, requests inbox, accept / decline / block, expiry, rate limits, `notifications`, live `u:<userId>` events with the bell badge.
 - [x] **A7 Captain team setup and Teams tracker.** Name + short code, colour picker (taken colours greyed live, contrast, too-similar warning), logo / emoji, motto, live card preview, onboarding board with "Send reminder".
 - [x] **A8 Password resets.** Organiser-issued one-time links; the `user:reset-password` operator script (stub in `scripts/user-reset-password.ts`).
-- [ ] **A9 Review & Start.** `validateReadyToStart`, checklist UI with "Fix" links, the Start transaction (lock settings, close registration, expire pending requests, set status, **call `initializeAuction`**).
+- [x] **A9 Review & Start.** `validateReadyToStart`, checklist UI with "Fix" links, the Start transaction (lock settings, close registration, expire pending requests, set status, **call `initializeAuction`**).
 - [ ] **A10 Tests.** Unit + service tests, a **tenant-isolation test for every Lane A service**, e2e `e2e/identity/**`.
 - [ ] **STOP: Lane A.** `npm run lint && npm run type-check && npm test`, write the handoff, commit, stop.
 
@@ -102,6 +102,14 @@ _Append dated entries as tasks land._
   it; `npm run user:reset-password -- <username>` now prints a link. Routes:
   `api/tournaments/[id]/participants/[userId]/reset-password`, `api/password-resets/[token]`.
   Page `/reset/[token]`; key-icon button on People rows with a linked account.
+- 2026-11-21 **A9** — `validateReadyToStart` (all ten §3.5 checks with offenders + "Fix" step;
+  100 % statement / branch coverage together with `keys`), `services/start/start.ts`: Start in one
+  transaction under the tournament lock — re-run the checks (409 `RULE_VIOLATION` /
+  `NOT_READY` with the failing ids), type-the-name confirm, status → `AUCTION_LIVE`,
+  `registration_open = false`, `started_at` / `locked_at`, expire pending requests (+
+  `request.cancelled` inbox events), audit `tournament.started`, **call `initializeAuction`**,
+  publish `tournament.status` after commit. Route `api/tournaments/[id]/start` (GET checklist,
+  POST start). Review step with ✅ / ❌ rows, "Fix" links, summary and the START dialog.
 
 ## Decisions
 
