@@ -9,7 +9,7 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
 - [x] **B1 Rules.** `nextValidBid` (flat raise and price bands), `canTeamBid` (returns the reason), custom-bid bounds, timer and break math, `allocateLeftovers`, `unsoldPolicy` handling. **100% branch coverage.**
 - [x] **B2 `initializeAuction`.** Fill in the Phase 0 stub: create `auction_state`, the random pool order and starting purses.
 - [x] **B3 Auction service.** `settleDue` (lot expiry, break expiry), bids (`FOR UPDATE`, `expectedVersion`, custom amounts), commands (next / sold / unsold / pause / resume / undo / take control / start new round), release, auction again, assign, reset, `processed_commands` idempotency, audit log, **publishing only after commit**.
-- [ ] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
+- [x] **B4 Endpoints.** `GET …/auction` (snapshot), `POST …/auction/bids`, `…/commands`, `…/tick`.
 - [ ] **B5 Client auction state.** Zustand store, version-gap detection with snapshot refetch, server clock offset, 10 s heartbeat, tick nudges at 0, Ably presence (online dots).
 - [ ] **B6 Screens.** Auctioneer console (controller lock, keyboard shortcuts). Command post. Captain phone bidding view. Soldier live status card component. Big-screen auction view. Sounds and confetti.
 - [ ] **B7 Allocation.** Preview, animated run, override, confirm, then status `GROUP_DRAW`.
@@ -41,6 +41,10 @@ Owned paths: PLAN §13.2 (Lane B column). Never edit shared files; write integra
   open / close lot, round end, `settleDue`, persist + publish), `run.ts` (the write pipeline),
   `bids.ts`, `commands.ts` (all 12 commands), `control.ts`, `snapshot.ts` (snapshot, tick,
   live-code access), `pool.ts`. 42 PGlite service tests.
+- 2026-11-21 · B4 endpoints: `GET …/auction` (`?liveCode=` for the big screen), `POST …/auction/bids`,
+  `…/commands`, `…/tick` (body `{ liveCode? }`). Smoke-tested on the dev server with the
+  `auction` seed: valid bid, duplicate commandId, ALREADY_LEADING, stale OUTBID, late TOO_LATE,
+  pause/resume, cross-tenant 404, no-session 404, 422 on a bad body.
 
 ## Decisions
 
