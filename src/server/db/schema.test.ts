@@ -1,11 +1,11 @@
 import { eq, sql } from 'drizzle-orm';
-import { useTestDb } from '@/test/db';
+import { setupTestDb } from '@/test/db';
 import { makeLeader, makeTournament, makeUser } from '@/test/factories';
 import { isUniqueViolation } from '@/server/errors';
 import { rows } from './sql';
 import { leaders, matchGames, matches, players, teams, tournaments } from './schema';
 
-const t = useTestDb();
+const t = setupTestDb();
 
 async function expectDbError(p: Promise<unknown>, pattern: RegExp): Promise<void> {
   await expect(p).rejects.toSatisfy((err: unknown) => {
@@ -75,11 +75,23 @@ describe('schema constraints (PLAN §5)', () => {
     const l2 = await makeLeader(t.db, { tournamentId: tour.id });
     await t.db
       .insert(teams)
-      .values({ tournamentId: tour.id, leaderId: l1.id, name: 'Red', shortName: 'RED', color: '#ff0000' });
+      .values({
+        tournamentId: tour.id,
+        leaderId: l1.id,
+        name: 'Red',
+        shortName: 'RED',
+        color: '#ff0000',
+      });
     await expect(
       t.db
         .insert(teams)
-        .values({ tournamentId: tour.id, leaderId: l2.id, name: 'Blue', shortName: 'BLU', color: '#ff0000' }),
+        .values({
+          tournamentId: tour.id,
+          leaderId: l2.id,
+          name: 'Blue',
+          shortName: 'BLU',
+          color: '#ff0000',
+        }),
     ).rejects.toSatisfy(isUniqueViolation);
 
     const [m] = await t.db

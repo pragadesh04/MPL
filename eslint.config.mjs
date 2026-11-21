@@ -24,7 +24,10 @@ const eslintConfig = defineConfig([
         'error',
         {
           patterns: [
-            { group: ['@/server', '@/server/*'], message: 'src/lib and src/components must not import src/server (server-only).' },
+            {
+              group: ['@/server', '@/server/*'],
+              message: 'src/lib and src/components must not import src/server (server-only).',
+            },
           ],
         },
       ],

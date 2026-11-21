@@ -23,9 +23,15 @@ export const tournamentStatusSchema = z.enum(TOURNAMENT_STATUSES);
 export type TournamentStatus = z.infer<typeof tournamentStatusSchema>;
 
 /** Statuses that count as "active" for the one-active-tournament-per-owner rule. */
-export const INACTIVE_TOURNAMENT_STATUSES = ['COMPLETED', 'CANCELLED'] as const satisfies readonly TournamentStatus[];
+export const INACTIVE_TOURNAMENT_STATUSES = [
+  'COMPLETED',
+  'CANCELLED',
+] as const satisfies readonly TournamentStatus[];
 /** Joining (all three paths) and profile edits are only allowed in these statuses (§2.3). */
-export const JOINABLE_TOURNAMENT_STATUSES = ['DRAFT', 'READY'] as const satisfies readonly TournamentStatus[];
+export const JOINABLE_TOURNAMENT_STATUSES = [
+  'DRAFT',
+  'READY',
+] as const satisfies readonly TournamentStatus[];
 
 export const MEMBERSHIP_ROLES = ['OWNER', 'CO_ADMIN', 'AUCTIONEER'] as const;
 export const membershipRoleSchema = z.enum(MEMBERSHIP_ROLES);
@@ -39,7 +45,12 @@ export const LEADER_APPROVALS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export const leaderApprovalSchema = z.enum(LEADER_APPROVALS);
 export type LeaderApproval = z.infer<typeof leaderApprovalSchema>;
 
-export const LEADER_INVITE_STATUSES = ['NOT_OPENED', 'OPENED', 'ACCOUNT_LINKED', 'TEAM_READY'] as const;
+export const LEADER_INVITE_STATUSES = [
+  'NOT_OPENED',
+  'OPENED',
+  'ACCOUNT_LINKED',
+  'TEAM_READY',
+] as const;
 export const leaderInviteStatusSchema = z.enum(LEADER_INVITE_STATUSES);
 export type LeaderInviteStatus = z.infer<typeof leaderInviteStatusSchema>;
 
@@ -60,7 +71,10 @@ export const playerStatusSchema = z.enum(PLAYER_STATUSES);
 export type PlayerStatus = z.infer<typeof playerStatusSchema>;
 
 /** Soldier statuses that mean "in a squad" (`team_id` is set exactly for these). */
-export const IN_SQUAD_PLAYER_STATUSES = ['SOLD', 'ALLOCATED'] as const satisfies readonly PlayerStatus[];
+export const IN_SQUAD_PLAYER_STATUSES = [
+  'SOLD',
+  'ALLOCATED',
+] as const satisfies readonly PlayerStatus[];
 
 /**
  * How a soldier reached a squad. PLAN §5 lists AUCTION / AUTO_ALLOCATED; RANDOM_SQUAD
@@ -74,7 +88,13 @@ export const PARTICIPANT_KINDS = ['LEADER', 'PLAYER'] as const;
 export const participantKindSchema = z.enum(PARTICIPANT_KINDS);
 export type ParticipantKind = z.infer<typeof participantKindSchema>;
 
-export const JOIN_REQUEST_STATUSES = ['PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED', 'EXPIRED'] as const;
+export const JOIN_REQUEST_STATUSES = [
+  'PENDING',
+  'ACCEPTED',
+  'DECLINED',
+  'CANCELLED',
+  'EXPIRED',
+] as const;
 export const joinRequestStatusSchema = z.enum(JOIN_REQUEST_STATUSES);
 export type JoinRequestStatus = z.infer<typeof joinRequestStatusSchema>;
 

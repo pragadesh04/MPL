@@ -63,7 +63,10 @@ export const joinRequestStatusEnum = pgEnum('join_request_status', JOIN_REQUEST_
 export const matchStageEnum = pgEnum('match_stage', MATCH_STAGES);
 export const matchStatusEnum = pgEnum('match_status', MATCH_STATUSES);
 export const webhookKindEnum = pgEnum('webhook_kind', WEBHOOK_KINDS);
-export const webhookDeliveryStatusEnum = pgEnum('webhook_delivery_status', WEBHOOK_DELIVERY_STATUSES);
+export const webhookDeliveryStatusEnum = pgEnum(
+  'webhook_delivery_status',
+  WEBHOOK_DELIVERY_STATUSES,
+);
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const tz = (name: string) => timestamp(name, { withTimezone: true });
@@ -158,7 +161,9 @@ export const memberships = pgTable(
   (t) => [
     primaryKey({ columns: [t.tournamentId, t.userId] }),
     // Exactly one OWNER row per tournament (kept in step with tournaments.owner_id).
-    uniqueIndex('memberships_one_owner_uq').on(t.tournamentId).where(sql`${t.role} = 'OWNER'`),
+    uniqueIndex('memberships_one_owner_uq')
+      .on(t.tournamentId)
+      .where(sql`${t.role} = 'OWNER'`),
     index('memberships_user_idx').on(t.userId),
   ],
 );
@@ -603,7 +608,10 @@ export const webhooks = pgTable(
     urlEncrypted: text('url_encrypted').notNull(),
     /** Generic webhooks only. */
     signingSecretEncrypted: text('signing_secret_encrypted'),
-    events: text('events').array().notNull().default(sql`'{}'::text[]`),
+    events: text('events')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     enabled: boolean('enabled').notNull().default(true),
     consecutiveFailures: integer('consecutive_failures').notNull().default(0),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),

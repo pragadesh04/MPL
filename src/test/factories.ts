@@ -31,7 +31,8 @@ const next = (): number => ++counter;
 /** Random key from the unambiguous alphabet (tests only; Lane A owns real key generation). */
 export function testKey(): string {
   let s = '';
-  for (let i = 0; i < KEY_LENGTH; i++) s += KEY_ALPHABET[Math.floor(Math.random() * KEY_ALPHABET.length)];
+  for (let i = 0; i < KEY_LENGTH; i++)
+    s += KEY_ALPHABET[Math.floor(Math.random() * KEY_ALPHABET.length)];
   return s;
 }
 
@@ -71,7 +72,9 @@ export async function makeTournament(
       ...overrides,
     })
     .returning();
-  await db.insert(memberships).values({ tournamentId: row!.id, userId: overrides.ownerId, role: 'OWNER' });
+  await db
+    .insert(memberships)
+    .values({ tournamentId: row!.id, userId: overrides.ownerId, role: 'OWNER' });
   return row!;
 }
 
@@ -105,7 +108,7 @@ export async function makeTeam(
     .values({
       name: `Team ${n}`,
       shortName: `T${n % 1000}`.slice(0, 4),
-      color: `#${(n * 2654435761 % 0xffffff).toString(16).padStart(6, '0')}`,
+      color: `#${((n * 2654435761) % 0xffffff).toString(16).padStart(6, '0')}`,
       sortOrder: n,
       ...overrides,
     })

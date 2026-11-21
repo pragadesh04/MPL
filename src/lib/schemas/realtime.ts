@@ -52,7 +52,9 @@ export const lotClosedDataSchema = z.object({
   nextAt: isoDate.nullable(),
 });
 
-export const auctionPausedDataSchema = z.object({ pausedRemainingMs: z.number().int().nonnegative() });
+export const auctionPausedDataSchema = z.object({
+  pausedRemainingMs: z.number().int().nonnegative(),
+});
 export const auctionResumedDataSchema = z.object({
   endsAt: isoDate.nullable(),
   nextAt: isoDate.nullable(),
@@ -224,4 +226,6 @@ export const WEBHOOK_EVENTS = [
 export const webhookEventSchema = z.enum(WEBHOOK_EVENTS);
 export type WebhookEvent = z.infer<typeof webhookEventSchema>;
 /** `bid.placed` is noisy and off by default. */
-export const DEFAULT_WEBHOOK_EVENTS: WebhookEvent[] = WEBHOOK_EVENTS.filter((e) => e !== 'bid.placed');
+export const DEFAULT_WEBHOOK_EVENTS: WebhookEvent[] = WEBHOOK_EVENTS.filter(
+  (e) => e !== 'bid.placed',
+);

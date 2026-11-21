@@ -13,7 +13,10 @@ import type { Connection, Schema } from './connect';
 
 export const MIGRATIONS_FOLDER = path.resolve(process.cwd(), 'drizzle');
 
-export async function migrateConnection(conn: Connection, migrationsFolder = MIGRATIONS_FOLDER): Promise<void> {
+export async function migrateConnection(
+  conn: Connection,
+  migrationsFolder = MIGRATIONS_FOLDER,
+): Promise<void> {
   const config = { migrationsFolder };
   // Each driver ships its own migrator; `conn.db` was built by the matching driver in connect().
   switch (conn.kind) {

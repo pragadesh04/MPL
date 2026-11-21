@@ -45,7 +45,12 @@ export const auctionCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('take-control'), ...commandBase }),
   z.object({ type: z.literal('start-round'), ...commandBase }),
   /** Remove a bought soldier from a squad, refund, back to the pool. */
-  z.object({ type: z.literal('release'), playerId: idSchema, reason: z.string().max(500).optional(), ...commandBase }),
+  z.object({
+    type: z.literal('release'),
+    playerId: idSchema,
+    reason: z.string().max(500).optional(),
+    ...commandBase,
+  }),
   /** Move one unsold soldier back into the pool. */
   z.object({ type: z.literal('auction-again'), playerId: idSchema, ...commandBase }),
   /** "Admin pick": unsold soldier straight into a squad at price 0. */

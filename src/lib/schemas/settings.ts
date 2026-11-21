@@ -11,7 +11,11 @@ import { z } from 'zod';
  * Always read settings through `parseSettings()` so old rows pick up new defaults.
  */
 
-export const UNSOLD_POLICIES = ['REAUCTION_THEN_ALLOCATE', 'RANDOM_SQUAD', 'ADMIN_DECIDES'] as const;
+export const UNSOLD_POLICIES = [
+  'REAUCTION_THEN_ALLOCATE',
+  'RANDOM_SQUAD',
+  'ADMIN_DECIDES',
+] as const;
 export const unsoldPolicySchema = z.enum(UNSOLD_POLICIES);
 export type UnsoldPolicy = z.infer<typeof unsoldPolicySchema>;
 

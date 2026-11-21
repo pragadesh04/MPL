@@ -23,10 +23,10 @@ export async function createTestDb(): Promise<TestDb> {
  * Vitest helper: one fresh database per test file, wired into `getDb()` so services under test
  * use it. Call at the top level of a test file:
  *
- *   const t = useTestDb();
+ *   const t = setupTestDb();
  *   it('…', async () => { await t.db.insert(users)… });
  */
-export function useTestDb(): { readonly db: Db } {
+export function setupTestDb(): { readonly db: Db } {
   let current: TestDb | undefined;
   beforeAll(async () => {
     current = await createTestDb();
@@ -38,7 +38,7 @@ export function useTestDb(): { readonly db: Db } {
   });
   return {
     get db(): Db {
-      if (!current) throw new Error('useTestDb: database not ready (use it inside a test)');
+      if (!current) throw new Error('setupTestDb: database not ready (use it inside a test)');
       return current.db;
     },
   };

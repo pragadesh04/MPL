@@ -21,14 +21,22 @@ export class AppError extends Error {
   }
 
   toJSON(): ApiError {
-    return { error: { code: this.code, message: this.message, ...(this.details ? { details: this.details } : {}) } };
+    return {
+      error: {
+        code: this.code,
+        message: this.message,
+        ...(this.details ? { details: this.details } : {}),
+      },
+    };
   }
 }
 
 export const GENERIC_NOT_FOUND = 'Not found';
 
-export const notFound = (message = GENERIC_NOT_FOUND): AppError => new AppError('NOT_FOUND', message);
-export const unauthenticated = (message = 'Please log in'): AppError => new AppError('UNAUTHENTICATED', message);
+export const notFound = (message = GENERIC_NOT_FOUND): AppError =>
+  new AppError('NOT_FOUND', message);
+export const unauthenticated = (message = 'Please log in'): AppError =>
+  new AppError('UNAUTHENTICATED', message);
 export const forbidden = (message = 'You can’t do that in this tournament'): AppError =>
   new AppError('FORBIDDEN', message);
 export const conflict = (message: string, details?: Record<string, unknown>): AppError =>
@@ -78,7 +86,9 @@ export function isUniqueViolation(err: unknown, constraint?: string): boolean {
   if (!constraint) return true;
   const name = pgConstraint(err);
   // Some drivers omit the name; fall back to the message text.
-  return name ? name === constraint : String(err).includes(constraint) || String(findPgError(err)).includes(constraint);
+  return name
+    ? name === constraint
+    : String(err).includes(constraint) || String(findPgError(err)).includes(constraint);
 }
 
 export function isCheckViolation(err: unknown): boolean {

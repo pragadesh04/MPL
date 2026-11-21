@@ -28,14 +28,24 @@ const schema = z
     INVITE_LINK_SECRET: secret('INVITE_LINK_SECRET'),
     APP_ENCRYPTION_KEY: secret('APP_ENCRYPTION_KEY'),
     PUBLIC_APP_URL: z.url().default('http://localhost:3000'),
-    LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
   })
   .superRefine((e, ctx) => {
     if (e.NODE_ENV === 'production' && !e.DATABASE_URL) {
-      ctx.addIssue({ code: 'custom', path: ['DATABASE_URL'], message: 'DATABASE_URL is required in production' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message: 'DATABASE_URL is required in production',
+      });
     }
     if (e.NODE_ENV === 'production' && e.DATABASE_URL?.startsWith('pglite:')) {
-      ctx.addIssue({ code: 'custom', path: ['DATABASE_URL'], message: 'PGlite is not allowed in production' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message: 'PGlite is not allowed in production',
+      });
     }
   })
   .transform((e) => ({
@@ -51,7 +61,9 @@ let cached: Env | undefined;
 /** Empty strings in .env files mean "not set". */
 function withoutEmpty(source: NodeJS.ProcessEnv): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(source).filter((e): e is [string, string] => typeof e[1] === 'string' && e[1].trim() !== ''),
+    Object.entries(source).filter(
+      (e): e is [string, string] => typeof e[1] === 'string' && e[1].trim() !== '',
+    ),
   );
 }
 
@@ -75,7 +87,10 @@ export function resetEnvCache(): void {
  * Database URLs only (no secrets required) — for scripts such as migrate and seed.
  * Migrations prefer the direct URL; the app uses the pooled one.
  */
-export function databaseUrls(source: NodeJS.ProcessEnv = process.env): { app: string; direct: string } {
+export function databaseUrls(source: NodeJS.ProcessEnv = process.env): {
+  app: string;
+  direct: string;
+} {
   const e = withoutEmpty(source);
   const app = e.DATABASE_URL ?? DEFAULT_PGLITE_URL;
   return { app, direct: e.DATABASE_URL_UNPOOLED ?? app };
