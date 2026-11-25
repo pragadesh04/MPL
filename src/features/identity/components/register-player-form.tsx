@@ -33,8 +33,6 @@ export function RegisterPlayerForm({ initialKey }: { initialKey: string }) {
       ign: '',
       username: '',
       password: '',
-      phone: '',
-      photoUrl: '',
       organiserKey: formatKeyInput(initialKey),
       requestedRole: undefined,
     },
@@ -83,8 +81,6 @@ export function RegisterPlayerForm({ initialKey }: { initialKey: string }) {
           'ign',
           'username',
           'password',
-          'phone',
-          'photoUrl',
           'organiserKey',
           'requestedRole',
         ]),
@@ -126,27 +122,6 @@ export function RegisterPlayerForm({ initialKey }: { initialKey: string }) {
           {...form.register('password')}
         />
       </FormField>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField id="phone" label="Phone (optional)" error={errors.phone?.message}>
-          <Input
-            id="phone"
-            type="tel"
-            autoComplete="tel"
-            {...fieldAria('phone', errors.phone?.message)}
-            {...form.register('phone')}
-          />
-        </FormField>
-        <FormField id="photoUrl" label="Photo link (optional)" error={errors.photoUrl?.message}>
-          <Input
-            id="photoUrl"
-            type="url"
-            placeholder="https://…"
-            {...fieldAria('photoUrl', errors.photoUrl?.message)}
-            {...form.register('photoUrl')}
-          />
-        </FormField>
-      </div>
-
       <div className="grid gap-3 rounded-lg border border-dashed border-border p-3">
         <FormField
           id="organiserKey"

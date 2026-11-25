@@ -19,13 +19,12 @@ import { addPersonSchema } from '../schemas';
 import { api, errorMessage } from '../lib/api';
 import { FormError } from './form-field';
 
-const FIELDS = ['type', 'name', 'ign', 'phone', 'amount'] as const;
+const FIELDS = ['type', 'name', 'ign', 'amount'] as const;
 type Field = (typeof FIELDS)[number];
 const FIELD_LABEL: Record<Field, string> = {
   type: 'Type (captain / soldier)',
   name: 'Name',
   ign: 'IGN',
-  phone: 'Phone',
   amount: 'Purse / base price',
 };
 
@@ -33,7 +32,6 @@ function guess(header: string): Field | '' {
   const h = header.toLowerCase();
   if (/type|role|kind/.test(h)) return 'type';
   if (/ign|in.?game|gamer/.test(h)) return 'ign';
-  if (/phone|mobile|whatsapp/.test(h)) return 'phone';
   if (/purse|price|base|mp|amount/.test(h)) return 'amount';
   if (/name/.test(h)) return 'name';
   return '';
@@ -85,7 +83,6 @@ export function ImportPeopleDialog({ tournamentId }: { tournamentId: string }) {
         type: kind,
         name: get('name'),
         ign: get('ign'),
-        phone: get('phone'),
         ...(amount ? (kind === 'LEADER' ? { purse: amount } : { basePrice: amount }) : {}),
       };
       const parsed = addPersonSchema.safeParse(candidate);

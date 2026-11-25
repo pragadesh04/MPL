@@ -33,7 +33,7 @@ export default async function SetupPage({ params, searchParams }: PageProps<'/t/
       {step === 'basics' ? (
         <BasicsForm
           tournamentId={id}
-          initial={{ name: tournament.name, logoUrl: tournament.logoUrl }}
+          initial={{ name: tournament.name }}
           disabled={!editable}
         />
       ) : step === 'rules' ? (

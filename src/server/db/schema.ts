@@ -98,7 +98,7 @@ export const users = pgTable(
     uniqueIndex('users_organiser_key_uq').on(t.organiserKey),
     check(
       'users_organiser_fields_ck',
-      sql`NOT ${t.isOrganiser} OR (${t.email} IS NOT NULL AND ${t.organiserKey} IS NOT NULL)`,
+      sql`NOT ${t.isOrganiser} OR ${t.organiserKey} IS NOT NULL`,
     ),
   ],
 );

@@ -48,26 +48,34 @@ export function SetupShell({
         </div>
         {actions}
       </header>
+      <p className="text-sm text-muted md:hidden">
+        Step {STEPS.findIndex((s) => s.id === step) + 1} of {STEPS.length}:{' '}
+        <span className="font-semibold text-foreground">
+          {STEPS.find((s) => s.id === step)?.label}
+        </span>
+      </p>
       <nav aria-label="Setup steps" className="overflow-x-auto">
-        <ol className="flex min-w-max gap-1">
+        <ol className="flex min-w-max gap-1 sm:min-w-0">
           {STEPS.map((s, i) => {
             const current = s.id === step;
             const complete = done.includes(s.id);
+            const status = current ? 'current step' : complete ? 'completed' : 'not done yet';
             return (
               <li key={s.id} className="flex-1">
                 <Link
                   href={s.href(tournament.id)}
                   aria-current={current ? 'step' : undefined}
                   className={cn(
-                    'flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-semibold tracking-wide uppercase transition-colors',
+                    'flex min-h-12 items-center gap-3 rounded-t-md border-b-2 px-3 py-2 text-sm font-semibold tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                     current
                       ? 'border-lime text-lime'
                       : 'border-border text-muted hover:border-lime-dim hover:text-foreground',
                   )}
                 >
                   <span
+                    aria-hidden="true"
                     className={cn(
-                      'flex size-6 items-center justify-center rounded-full border text-xs',
+                      'flex size-7 shrink-0 items-center justify-center rounded-full border text-xs',
                       complete
                         ? 'border-lime bg-lime text-lime-foreground'
                         : current
@@ -75,9 +83,10 @@ export function SetupShell({
                           : 'border-border',
                     )}
                   >
-                    {complete ? <Check aria-hidden className="size-3.5" /> : i + 1}
+                    {complete ? <Check aria-hidden className="size-4" /> : i + 1}
                   </span>
-                  {s.label}
+                  <span>{s.label}</span>
+                  <span className="sr-only">({status})</span>
                 </Link>
               </li>
             );

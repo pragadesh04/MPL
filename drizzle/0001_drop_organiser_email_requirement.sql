@@ -1,0 +1,2 @@
+ALTER TABLE "users" DROP CONSTRAINT "users_organiser_fields_ck";--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_organiser_fields_ck" CHECK (NOT "users"."is_organiser" OR "users"."organiser_key" IS NOT NULL);

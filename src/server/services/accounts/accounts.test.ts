@@ -38,11 +38,10 @@ describe('registration (PLAN §2.1)', () => {
       accountType: 'ORGANISER',
       displayName: 'Ravi Kumar',
       username: uname('ravi'),
-      email: 'Ravi@Example.com',
       password: 'password123',
     });
     expect(user.isOrganiser).toBe(true);
-    expect(user.email).toBe('ravi@example.com');
+    expect(user.email).toBeNull();
     expect(user.playerCode).toMatch(/^[2-9A-HJKMNP-Z]{6}$/);
     expect(user.organiserKey).toMatch(/^[2-9A-HJKMNP-Z]{6}$/);
     expect(user).not.toHaveProperty('passwordHash');

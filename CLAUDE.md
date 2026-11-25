@@ -190,8 +190,8 @@ scripts use PGlite in `../.pglite-<project folder>` (outside the project, see go
 
 ## Identity & access (details in PLAN.md §2, §5)
 
-- **One `users` table for everyone** (username + argon2 password; organisers also give an
-  email). The JWT in an httpOnly cookie holds **only `userId`**. There is **no "current
+- **One `users` table for everyone** (username + argon2 password; no email at sign-up,
+  PLAN decision 29). The JWT in an httpOnly cookie holds **only `userId`**. There is **no "current
   tournament" in the session.**
 - **Roles are per tournament** and resolved on every request by
   `loadTournamentRole(userId, tournamentId)` from three sources: `memberships` (OWNER /

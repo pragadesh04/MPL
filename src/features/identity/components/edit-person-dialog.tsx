@@ -41,7 +41,6 @@ export function EditPersonDialog({
   const router = useRouter();
   const [name, setName] = useState(person.name);
   const [ign, setIgn] = useState(person.ign ?? '');
-  const [phone, setPhone] = useState(person.phone ?? '');
   const [amount, setAmount] = useState(String(person.amount));
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -78,8 +77,8 @@ export function EditPersonDialog({
                   method: 'PATCH',
                   body:
                     kind === 'LEADER'
-                      ? { name, ign, phone, purse: Number(amount) }
-                      : { name, ign, phone, basePrice: Number(amount) },
+                      ? { name, ign, purse: Number(amount) }
+                      : { name, ign, basePrice: Number(amount) },
                 }),
               'Saved',
             );
@@ -94,9 +93,6 @@ export function EditPersonDialog({
           </FormField>
           <FormField id="edit-ign" label="IGN" error={fieldErrors.ign}>
             <Input id="edit-ign" value={ign} onChange={(e) => setIgn(e.target.value)} />
-          </FormField>
-          <FormField id="edit-phone" label="Phone" error={fieldErrors.phone}>
-            <Input id="edit-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </FormField>
           <FormField
             id="edit-amount"

@@ -191,7 +191,7 @@ export async function updateBasics(
     assertSetupEditable(tour.status);
     await tx
       .update(tournaments)
-      .set({ name: data.name, logoUrl: data.logoUrl ?? null })
+      .set({ name: data.name, ...(data.logoUrl !== undefined ? { logoUrl: data.logoUrl } : {}) })
       .where(eq(tournaments.id, tournamentId));
     await publishStatus(tx, tournamentId, onCommit);
   }, db);

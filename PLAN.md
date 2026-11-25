@@ -1265,6 +1265,9 @@ Status (2026-11-21): M1–M6 are built and merged; M0 runs locally, deployment p
 | 24 | Group draw                                 | Not automatic after allocation: the organiser picks a random or manual draw on the Groups page (with the ceremony) |
 | 25 | Sign-up rate limit                         | 60 per IP per 10 minutes, so a squad can register together on one venue Wi-Fi |
 | 26 | Look and feel                              | **Professional, simple, sleek:** no mascots or illustrations, a plain shield brand mark, line icons for empty states, lime used sparingly, plain copy on entry screens (§7) |
+| 27 | Fewer fields                               | No phone or photo-link fields in any form (sign-up, profile, add / edit person, my card, CSV import, personal-link claim). The organiser key is prefilled from the shared link (`/register?key=`, or the Join card on the dashboard). Stored columns stay, optional, for old data |
+| 28 | Setup basics and step bar                  | Basics step is the tournament name only (no logo link). The step bar is easy to use: large touch targets, a "Step x of 5" line on phones, and screen-reader status for each step. A save that omits the logo keeps the stored logo |
+| 29 | No email at sign-up                       | Organiser and player sign-up ask for no email. Organisers sign up with name, username and password. Database migration 0001 drops the rule that organisers need an email. Organiser invites still accept a username or an existing account's email (that's an invite lookup, not sign-up) |
 
 ---
 

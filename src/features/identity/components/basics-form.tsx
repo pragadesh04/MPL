@@ -6,30 +6,37 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api, errorMessage } from '../lib/api';
-import { FormError, FormField } from './form-field';
+import { FormError, FormField, fieldAria } from './form-field';
 
-/** Setup step 1: name and logo (§7.2). */
+/** Setup step 1: the tournament name. */
 export function BasicsForm({
   tournamentId,
   initial,
   disabled,
 }: {
   tournamentId: string;
-  initial: { name: string; logoUrl: string | null };
+  initial: { name: string };
   disabled: boolean;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initial.name);
-  const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? '');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const trimmed = name.trim();
+  const nameError =
+    trimmed.length > 0 && trimmed.length < 3 ? 'Use at least 3 characters' : undefined;
+
   const save = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    if (nameError || trimmed.length === 0) {
+      setError(nameError ?? 'Enter a tournament name');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      await api(`/api/tournaments/${tournamentId}`, { method: 'PATCH', body: { name, logoUrl } });
+      await api(`/api/tournaments/${tournamentId}`, { method: 'PATCH', body: { name: trimmed } });
       toast.success('Saved');
       router.push(`/t/${tournamentId}/setup?step=rules`);
       router.refresh();
@@ -41,31 +48,34 @@ export function BasicsForm({
   };
 
   return (
-    <form onSubmit={save} className="grid max-w-xl gap-4">
+    <form onSubmit={save} className="grid max-w-xl gap-6" noValidate>
       <FormError message={error} />
-      <FormField id="t-name" label="Tournament name">
+      <FormField
+        id="t-name"
+        label="Tournament name"
+        error={nameError}
+        hint={nameError ? undefined : 'Shown on the big screen and in announcements.'}
+        className="gap-2"
+      >
         <Input
           id="t-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          minLength={3}
           maxLength={60}
-          required
+          autoComplete="off"
+          autoFocus
           disabled={disabled}
+          className="h-12 text-base"
+          {...fieldAria('t-name', nameError)}
         />
       </FormField>
-      <FormField id="t-logo" label="Logo link (optional)" hint="An https:// image link">
-        <Input
-          id="t-logo"
-          type="url"
-          value={logoUrl}
-          onChange={(e) => setLogoUrl(e.target.value)}
-          placeholder="https://…"
-          disabled={disabled}
-        />
-      </FormField>
-      <Button type="submit" disabled={busy || disabled} className="justify-self-start">
-        Save & continue
+      <Button
+        type="submit"
+        size="lg"
+        disabled={busy || disabled}
+        className="w-full justify-center sm:w-auto"
+      >
+        {busy ? 'Saving…' : 'Save and continue'}
       </Button>
     </form>
   );

@@ -25,8 +25,6 @@ export function MyCardForm({
   const router = useRouter();
   const [name, setName] = useState(initial.name);
   const [ign, setIgn] = useState(initial.ign ?? '');
-  const [phone, setPhone] = useState(initial.phone ?? '');
-  const [photoUrl, setPhotoUrl] = useState(initial.photoUrl ?? '');
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -43,7 +41,7 @@ export function MyCardForm({
           try {
             await api(`/api/tournaments/${tournamentId}/me`, {
               method: 'PATCH',
-              body: { name, ign, phone, photoUrl },
+              body: { name, ign },
             });
             toast.success('Card updated');
             router.refresh();
@@ -70,25 +68,6 @@ export function MyCardForm({
             value={ign}
             disabled={disabled}
             onChange={(e) => setIgn(e.target.value)}
-          />
-        </FormField>
-        <FormField id="card-phone" label="Phone (organisers only)" error={fieldErrors.phone}>
-          <Input
-            id="card-phone"
-            type="tel"
-            value={phone}
-            disabled={disabled}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </FormField>
-        <FormField id="card-photo" label="Photo link" error={fieldErrors.photoUrl}>
-          <Input
-            id="card-photo"
-            type="url"
-            value={photoUrl}
-            disabled={disabled}
-            placeholder="https://…"
-            onChange={(e) => setPhotoUrl(e.target.value)}
           />
         </FormField>
         {disabled ? null : (

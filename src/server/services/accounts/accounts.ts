@@ -95,7 +95,6 @@ export async function registerOrganiser(
       username: data.username,
       passwordHash: await hashPassword(data.password),
       displayName: data.displayName,
-      email: data.email,
       isOrganiser: true,
     },
     true,

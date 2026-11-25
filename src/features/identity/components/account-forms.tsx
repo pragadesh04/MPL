@@ -32,7 +32,7 @@ export function ProfileForm({ initial }: { initial: ProfileValues }) {
       router.refresh();
     } catch (err) {
       setFormError(
-        applyServerError(err, form.setError, ['displayName', 'ign', 'phone', 'photoUrl']),
+        applyServerError(err, form.setError, ['displayName', 'ign']),
       );
     }
   });
@@ -48,22 +48,6 @@ export function ProfileForm({ initial }: { initial: ProfileValues }) {
       </FormField>
       <FormField id="ign" label="Mini Militia IGN" error={errors.ign?.message}>
         <Input id="ign" {...fieldAria('ign', errors.ign?.message)} {...form.register('ign')} />
-      </FormField>
-      <FormField id="phone" label="Phone (optional)" error={errors.phone?.message}>
-        <Input
-          id="phone"
-          type="tel"
-          {...fieldAria('phone', errors.phone?.message)}
-          {...form.register('phone')}
-        />
-      </FormField>
-      <FormField id="photoUrl" label="Photo link (optional)" error={errors.photoUrl?.message}>
-        <Input
-          id="photoUrl"
-          type="url"
-          {...fieldAria('photoUrl', errors.photoUrl?.message)}
-          {...form.register('photoUrl')}
-        />
       </FormField>
       <p className="text-sm text-muted">
         Changes also update your card in tournaments that haven&apos;t started yet.

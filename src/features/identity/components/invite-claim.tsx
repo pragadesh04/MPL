@@ -74,8 +74,6 @@ export function InviteRegisterForm({
       ign: prefill.ign ?? '',
       username: '',
       password: '',
-      phone: '',
-      photoUrl: '',
     },
   });
   const { errors, isSubmitting } = form.formState;
@@ -94,7 +92,6 @@ export function InviteRegisterForm({
           'ign',
           'username',
           'password',
-          'phone',
         ]),
       );
       return;
@@ -133,14 +130,6 @@ export function InviteRegisterForm({
           autoComplete="new-password"
           {...fieldAria('password', errors.password?.message)}
           {...form.register('password')}
-        />
-      </FormField>
-      <FormField id="phone" label="Phone (optional)" error={errors.phone?.message}>
-        <Input
-          id="phone"
-          type="tel"
-          {...fieldAria('phone', errors.phone?.message)}
-          {...form.register('phone')}
         />
       </FormField>
       <Button type="submit" size="lg" disabled={isSubmitting}>

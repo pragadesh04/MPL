@@ -96,7 +96,6 @@ export const registerOrganiserSchema = z.object({
   accountType: z.literal('ORGANISER'),
   displayName: displayNameSchema,
   username: usernameSchema,
-  email: z.email('Enter a valid email').trim().toLowerCase(),
   password: passwordSchema,
 });
 export type RegisterOrganiserInput = z.input<typeof registerOrganiserSchema>;

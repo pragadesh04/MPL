@@ -33,7 +33,6 @@ export function RegisterOrganiserForm() {
       accountType: 'ORGANISER',
       displayName: '',
       username: '',
-      email: '',
       password: '',
       confirmPassword: '',
     },
@@ -50,7 +49,7 @@ export function RegisterOrganiserForm() {
       router.refresh();
     } catch (err) {
       setFormError(
-        applyServerError(err, form.setError, ['displayName', 'username', 'email', 'password']),
+        applyServerError(err, form.setError, ['displayName', 'username', 'password']),
       );
     }
   });
@@ -71,20 +70,6 @@ export function RegisterOrganiserForm() {
         error={errors.username?.message}
         registration={form.register('username')}
       />
-      <FormField
-        id="email"
-        label="Email"
-        error={errors.email?.message}
-        hint="Only for account recovery by the site admin. We never email you."
-      >
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          {...fieldAria('email', errors.email?.message)}
-          {...form.register('email')}
-        />
-      </FormField>
       <FormField id="password" label="Password" error={errors.password?.message}>
         <PasswordInput
           id="password"

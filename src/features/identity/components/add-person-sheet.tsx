@@ -44,7 +44,6 @@ export function AddPersonSheet({
   const [type, setType] = useState<ParticipantKind>('PLAYER');
   const [name, setName] = useState('');
   const [ign, setIgn] = useState('');
-  const [phone, setPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -54,7 +53,6 @@ export function AddPersonSheet({
   const reset = (): void => {
     setName('');
     setIgn('');
-    setPhone('');
     setAmount('');
     setFieldErrors({});
   };
@@ -68,8 +66,8 @@ export function AddPersonSheet({
       const added = await api<Added>(`/api/tournaments/${tournamentId}/people`, {
         body:
           type === 'LEADER'
-            ? { type, name, ign, phone, purse: value }
-            : { type, name, ign, phone, basePrice: value },
+            ? { type, name, ign, purse: value }
+            : { type, name, ign, basePrice: value },
       });
       setLast(added);
       reset();
@@ -128,14 +126,6 @@ export function AddPersonSheet({
             </FormField>
             <FormField id="person-ign" label="IGN (optional)" error={fieldErrors.ign}>
               <Input id="person-ign" value={ign} onChange={(e) => setIgn(e.target.value)} />
-            </FormField>
-            <FormField id="person-phone" label="Phone (optional)" error={fieldErrors.phone}>
-              <Input
-                id="person-phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
             </FormField>
             {type === 'LEADER' ? (
               <FormField
